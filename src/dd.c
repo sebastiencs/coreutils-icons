@@ -1,5 +1,5 @@
 /* dd -- convert a file while copying it.
-   Copyright (C) 1985-2017 Free Software Foundation, Inc.
+   Copyright (C) 1985-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Paul Rubin, David MacKenzie, and Stuart Kemp. */
 
@@ -22,7 +22,6 @@
 
 #include <sys/types.h>
 #include <signal.h>
-#include <getopt.h>
 
 #include "system.h"
 #include "close-stream.h"
@@ -31,6 +30,7 @@
 #include "fd-reopen.h"
 #include "gethrxtime.h"
 #include "human.h"
+#include "ioblksize.h"
 #include "long-options.h"
 #include "quote.h"
 #include "verror.h"
@@ -265,6 +265,9 @@ static sig_atomic_t volatile info_signal_count;
 
 /* Whether to discard cache for input or output.  */
 static bool i_nocache, o_nocache;
+
+/* Whether to instruct the kernel to discard the complete file.  */
+static bool i_nocache_eof, o_nocache_eof;
 
 /* Function used for read (to handle iflag=fullblock parameter).  */
 static ssize_t (*iread_fnc) (int fd, char *buf, size_t size);
@@ -583,8 +586,9 @@ Copy a file, converting and formatting according to the operands.\n\
       fputs (_("\
 \n\
 N and BYTES may be followed by the following multiplicative suffixes:\n\
-c =1, w =2, b =512, kB =1000, K =1024, MB =1000*1000, M =1024*1024, xM =M,\n\
-GB =1000*1000*1000, G =1024*1024*1024, and so on for T, P, E, Z, Y.\n\
+c=1, w=2, b=512, kB=1000, K=1024, MB=1000*1000, M=1024*1024, xM=M,\n\
+GB=1000*1000*1000, G=1024*1024*1024, and so on for T, P, E, Z, Y.\n\
+Binary prefixes can be used, too: KiB=K, MiB=M, and so on.\n\
 \n\
 Each CONV symbol may be:\n\
 \n\
@@ -741,9 +745,7 @@ alloc_obuf (void)
 static void
 translate_charset (char const *new_trans)
 {
-  int i;
-
-  for (i = 0; i < 256; i++)
+  for (int i = 0; i < 256; i++)
     trans_table[i] = new_trans[trans_table[i]];
   translation_needed = true;
 }
@@ -1002,7 +1004,8 @@ quit (int code)
   exit (code);
 }
 
-/* Return LEN rounded down to a multiple of PAGE_SIZE
+/* Return LEN rounded down to a multiple of IO_BUFSIZE
+   (to minimize calls to the expensive posix_fadvise(,POSIX_FADV_DONTNEED),
    while storing the remainder internally per FD.
    Pass LEN == 0 to get the current remainder.  */
 
@@ -1015,7 +1018,7 @@ cache_round (int fd, off_t len)
   if (len)
     {
       uintmax_t c_pending = *pending + len;
-      *pending = c_pending % page_size;
+      *pending = c_pending % IO_BUFSIZE;
       if (c_pending > *pending)
         len = c_pending - *pending;
       else
@@ -1035,54 +1038,64 @@ static bool
 invalidate_cache (int fd, off_t len)
 {
   int adv_ret = -1;
+  off_t offset;
+  bool nocache_eof = (fd == STDIN_FILENO ? i_nocache_eof : o_nocache_eof);
 
   /* Minimize syscalls.  */
   off_t clen = cache_round (fd, len);
   if (len && !clen)
     return true; /* Don't advise this time.  */
-  if (!len && !clen && max_records)
-    return true; /* Nothing pending.  */
+  else if (! len && ! clen && ! nocache_eof)
+    return true;
   off_t pending = len ? cache_round (fd, 0) : 0;
 
   if (fd == STDIN_FILENO)
     {
       if (input_seekable)
-        {
-          /* Note we're being careful here to only invalidate what
-             we've read, so as not to dump any read ahead cache.  */
-#if HAVE_POSIX_FADVISE
-            adv_ret = posix_fadvise (fd, input_offset - clen - pending, clen,
-                                     POSIX_FADV_DONTNEED);
-#else
-            errno = ENOTSUP;
-#endif
-        }
+        offset = input_offset;
       else
-        errno = ESPIPE;
+        {
+          offset = -1;
+          errno = ESPIPE;
+        }
     }
-  else if (fd == STDOUT_FILENO)
+  else
     {
       static off_t output_offset = -2;
 
       if (output_offset != -1)
         {
-          if (0 > output_offset)
-            {
-              output_offset = lseek (fd, 0, SEEK_CUR);
-              output_offset -= clen + pending;
-            }
-          if (0 <= output_offset)
-            {
-#if HAVE_POSIX_FADVISE
-              adv_ret = posix_fadvise (fd, output_offset, clen,
-                                       POSIX_FADV_DONTNEED);
-#else
-              errno = ENOTSUP;
-#endif
-              output_offset += clen + pending;
-            }
+          if (output_offset < 0)
+            output_offset = lseek (fd, 0, SEEK_CUR);
+          else if (len)
+            output_offset += clen + pending;
         }
+
+      offset = output_offset;
     }
+
+  if (0 <= offset)
+   {
+     if (! len && clen && nocache_eof)
+       {
+         pending = clen;
+         clen = 0;
+       }
+
+     /* Note we're being careful here to only invalidate what
+        we've read, so as not to dump any read ahead cache.
+        Note also the kernel is conservative and only invalidates
+        full pages in the specified range.  */
+#if HAVE_POSIX_FADVISE
+     offset = offset - clen - pending;
+     /* ensure full page specified when invalidating to eof.  */
+     if (clen == 0)
+       offset -= offset % page_size;
+     adv_ret = posix_fadvise (fd, offset, clen, POSIX_FADV_DONTNEED);
+#else
+     errno = ENOTSUP;
+#endif
+   }
 
   return adv_ret != -1 ? true : false;
 }
@@ -1095,11 +1108,21 @@ static ssize_t
 iread (int fd, char *buf, size_t size)
 {
   ssize_t nread;
+  static ssize_t prev_nread;
 
   do
     {
       process_signals ();
       nread = read (fd, buf, size);
+      /* Ignore final read error with iflag=direct as that
+         returns EINVAL due to the non aligned file offset.  */
+      if (nread == -1 && errno == EINVAL
+          && 0 < prev_nread && prev_nread < size
+          && (input_flags & O_DIRECT))
+        {
+          errno = 0;
+          nread = 0;
+        }
     }
   while (nread < 0 && errno == EINTR);
 
@@ -1109,8 +1132,6 @@ iread (int fd, char *buf, size_t size)
 
   if (0 < nread && warn_partial_read)
     {
-      static ssize_t prev_nread;
-
       if (0 < prev_nread && prev_nread < size)
         {
           uintmax_t prev = prev_nread;
@@ -1123,10 +1144,9 @@ iread (int fd, char *buf, size_t size)
                    prev);
           warn_partial_read = false;
         }
-
-      prev_nread = nread;
     }
 
+  prev_nread = nread;
   return nread;
 }
 
@@ -1170,15 +1190,19 @@ iwrite (int fd, char const *buf, size_t size)
                quotef (output_file));
 
       /* Since we have just turned off O_DIRECT for the final write,
-         here we try to preserve some of its semantics.  First, use
-         posix_fadvise to tell the system not to pollute the buffer
-         cache with this data.  Don't bother to diagnose lseek or
-         posix_fadvise failure. */
+         we try to preserve some of its semantics.  */
+
+      /* Call invalidate_cache() to setup the appropriate offsets
+         for subsequent calls.  */
+      o_nocache_eof = true;
       invalidate_cache (STDOUT_FILENO, 0);
 
       /* Attempt to ensure that that final block is committed
          to disk as quickly as possible.  */
       conversions_mask |= C_FSYNC;
+
+      /* After the subsequent fsync() we'll call invalidate_cache()
+         to attempt to clear all data from the page cache.  */
     }
 
   while (total_written < size)
@@ -1382,13 +1406,12 @@ operand_is (char const *operand, char const *name)
 static void
 scanargs (int argc, char *const *argv)
 {
-  int i;
   size_t blocksize = 0;
   uintmax_t count = (uintmax_t) -1;
   uintmax_t skip = 0;
   uintmax_t seek = 0;
 
-  for (i = optind; i < argc; i++)
+  for (int i = optind; i < argc; i++)
     {
       char const *name = argv[i];
       char const *val = strchr (name, '=');
@@ -1565,11 +1588,13 @@ scanargs (int argc, char *const *argv)
   if (input_flags & O_NOCACHE)
     {
       i_nocache = true;
+      i_nocache_eof = (max_records == 0 && max_bytes == 0);
       input_flags &= ~O_NOCACHE;
     }
   if (output_flags & O_NOCACHE)
     {
       o_nocache = true;
+      o_nocache_eof = (max_records == 0 && max_bytes == 0);
       output_flags &= ~O_NOCACHE;
     }
 }
@@ -1617,9 +1642,8 @@ apply_translations (void)
 static void
 translate_buffer (char *buf, size_t nread)
 {
-  char *cp;
   size_t i;
-
+  char *cp;
   for (i = nread, cp = buf; i; i--, cp++)
     *cp = trans_table[to_uchar (*cp)];
 }
@@ -1639,8 +1663,6 @@ static char *
 swab_buffer (char *buf, size_t *nread)
 {
   char *bufstart = buf;
-  char *cp;
-  size_t i;
 
   /* Is a char left from last time?  */
   if (char_is_saved)
@@ -1661,8 +1683,8 @@ swab_buffer (char *buf, size_t *nread)
      positions toward the end, working from the end of the buffer
      toward the beginning.  This way we only move half of the data.  */
 
-  cp = bufstart + *nread;	/* Start one char past the last.  */
-  for (i = *nread / 2; i; i--, cp -= 2)
+  char *cp = bufstart + *nread;	/* Start one char past the last.  */
+  for (size_t i = *nread / 2; i; i--, cp -= 2)
     *cp = *(cp - 2);
 
   return ++bufstart;
@@ -1693,7 +1715,7 @@ advance_input_offset (uintmax_t offset)
    The offending behavior has been confirmed with an Exabyte SCSI tape
    drive accessed via /dev/nst0 on both Linux 2.2.17 and 2.4.16 kernels.  */
 
-#ifdef __linux__
+#if defined __linux__ && HAVE_SYS_MTIO_H
 
 # include <sys/mtio.h>
 
@@ -1933,9 +1955,7 @@ copy_simple (char const *buf, size_t nread)
 static void
 copy_with_block (char const *buf, size_t nread)
 {
-  size_t i;
-
-  for (i = nread; i; i--, buf++)
+  for (size_t i = nread; i; i--, buf++)
     {
       if (*buf == newline_character)
         {
@@ -1965,13 +1985,11 @@ copy_with_block (char const *buf, size_t nread)
 static void
 copy_with_unblock (char const *buf, size_t nread)
 {
-  size_t i;
-  char c;
   static size_t pending_spaces = 0;
 
-  for (i = 0; i < nread; i++)
+  for (size_t i = 0; i < nread; i++)
     {
-      c = buf[i];
+      char c = buf[i];
 
       if (col++ >= conversion_blocksize)
         {
@@ -2159,13 +2177,19 @@ dd_copy (void)
       else
         nread = iread_fnc (STDIN_FILENO, ibuf, input_blocksize);
 
-      if (nread >= 0 && i_nocache)
-        invalidate_cache (STDIN_FILENO, nread);
-
-      if (nread == 0)
-        break;			/* EOF.  */
-
-      if (nread < 0)
+      if (nread > 0)
+        {
+          advance_input_offset (nread);
+          if (i_nocache)
+            invalidate_cache (STDIN_FILENO, nread);
+        }
+      else if (nread == 0)
+        {
+          i_nocache_eof |= i_nocache;
+          o_nocache_eof |= o_nocache && ! (conversions_mask & C_NOTRUNC);
+          break;			/* EOF.  */
+        }
+      else
         {
           if (!(conversions_mask & C_NOERROR) || status_level != STATUS_NONE)
             error (0, errno, _("error reading %s"), quoteaf (input_file));
@@ -2204,7 +2228,6 @@ dd_copy (void)
         }
 
       n_bytes_read = nread;
-      advance_input_offset (nread);
 
       if (n_bytes_read < input_blocksize)
         {
@@ -2275,8 +2298,7 @@ dd_copy (void)
     {
       /* If the final input line didn't end with a '\n', pad
          the output block to 'conversion_blocksize' chars.  */
-      size_t i;
-      for (i = col; i < conversion_blocksize; i++)
+      for (size_t i = col; i < conversion_blocksize; i++)
         output_char (space_character);
     }
 
@@ -2368,12 +2390,9 @@ main (int argc, char **argv)
 
   page_size = getpagesize ();
 
-  parse_long_options (argc, argv, PROGRAM_NAME, PACKAGE, Version,
-                      usage, AUTHORS, (char const *) NULL);
+  parse_gnu_standard_options_only (argc, argv, PROGRAM_NAME, PACKAGE, Version,
+                                   true, usage, AUTHORS, (char const *) NULL);
   close_stdout_required = false;
-
-  if (getopt_long (argc, argv, "", NULL, NULL) != -1)
-    usage (EXIT_FAILURE);
 
   /* Initialize translation table to identity translation. */
   for (i = 0; i < 256; i++)
@@ -2481,13 +2500,12 @@ main (int argc, char **argv)
           exit_status = EXIT_FAILURE;
         }
     }
-  else if (max_records != (uintmax_t) -1)
+  else
     {
-      /* Invalidate any pending region less than page size,
-         in case the kernel might round up.  */
-      if (i_nocache)
+      /* Invalidate any pending region or to EOF if appropriate.  */
+      if (i_nocache || i_nocache_eof)
         invalidate_cache (STDIN_FILENO, 0);
-      if (o_nocache)
+      if (o_nocache || o_nocache_eof)
         invalidate_cache (STDOUT_FILENO, 0);
     }
 

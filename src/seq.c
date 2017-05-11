@@ -1,5 +1,5 @@
 /* seq - print sequence of numbers to standard output.
-   Copyright (C) 1994-2017 Free Software Foundation, Inc.
+   Copyright (C) 1994-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Ulrich Drepper.  */
 
@@ -23,7 +23,7 @@
 
 #include "system.h"
 #include "die.h"
-#include "c-strtod.h"
+#include "cl-strtod.h"
 #include "error.h"
 #include "quote.h"
 #include "xstrtod.h"
@@ -41,6 +41,9 @@
 #define PROGRAM_NAME "seq"
 
 #define AUTHORS proper_name ("Ulrich Drepper")
+
+/* True if the locale settings were honored.  */
+static bool locale_ok;
 
 /* If true print all number with equal width.  */
 static bool equal_width;
@@ -142,7 +145,7 @@ scan_arg (const char *arg)
 {
   operand ret;
 
-  if (! xstrtold (arg, NULL, &ret.value, c_strtold))
+  if (! xstrtold (arg, NULL, &ret.value, cl_strtold))
     {
       error (0, 0, _("invalid floating point argument: %s"), quote (arg));
       usage (EXIT_FAILURE);
@@ -284,7 +287,7 @@ io_error (void)
 {
   /* FIXME: consider option to silently ignore errno=EPIPE */
   clearerr (stdout);
-  die (EXIT_FAILURE, errno, _("standard output"));
+  die (EXIT_FAILURE, errno, _("write error"));
 }
 
 /* Actually print the sequence of numbers in the specified range, with the
@@ -324,14 +327,16 @@ print_numbers (char const *fmt, struct layout layout,
               long double x_val;
               char *x_str;
               int x_strlen;
-              setlocale (LC_NUMERIC, "C");
+              if (locale_ok)
+                setlocale (LC_NUMERIC, "C");
               x_strlen = asprintf (&x_str, fmt, x);
-              setlocale (LC_NUMERIC, "");
+              if (locale_ok)
+                setlocale (LC_NUMERIC, "");
               if (x_strlen < 0)
                 xalloc_die ();
               x_str[x_strlen - layout.suffix_len] = '\0';
 
-              if (xstrtold (x_str + layout.prefix_len, NULL, &x_val, c_strtold)
+              if (xstrtold (x_str + layout.prefix_len, NULL, &x_val, cl_strtold)
                   && x_val == last)
                 {
                   char *x0_str = NULL;
@@ -559,7 +564,7 @@ main (int argc, char **argv)
 
   initialize_main (&argc, &argv);
   set_program_name (argv[0]);
-  setlocale (LC_ALL, "");
+  locale_ok = !!setlocale (LC_ALL, "");
   bindtextdomain (PACKAGE, LOCALEDIR);
   textdomain (PACKAGE);
 

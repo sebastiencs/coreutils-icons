@@ -1,7 +1,7 @@
 #!/bin/sh
 # readlink from 6.9 would fail with a false-positive symlink loop error
 
-# Copyright (C) 2007-2017 Free Software Foundation, Inc.
+# Copyright (C) 2007-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ readlink pwd
@@ -34,7 +34,7 @@ ln -s ../s/2 d/1 || framework_failure_
 # With coreutils-6.9, this would fail with ELOOP.
 readlink -v -e p/1 > out || fail=1
 # readlink -e d/2 > exp || fail=1
-echo "$cwd/d/2" > exp || fail=1
+echo "$cwd/d/2" > exp || framework_failure_
 compare exp out || fail=1
 
 # Construct a real loop and make sure readlink still detects it.
@@ -56,7 +56,7 @@ ln -nsf ../p/7 d/6 || framework_failure_
 ln -nsf ../p/8 d/7 || framework_failure_
 echo x > d/8       || framework_failure_
 readlink -v -e p/1 > out || fail=1
-echo "$cwd/d/8" > exp || fail=1
+echo "$cwd/d/8" > exp || framework_failure_
 compare exp out || fail=1
 
 # A trivial loop

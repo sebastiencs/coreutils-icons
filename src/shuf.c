@@ -1,6 +1,6 @@
 /* Shuffle lines of text.
 
-   Copyright (C) 2006-2017 Free Software Foundation, Inc.
+   Copyright (C) 2006-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
    Written by Paul Eggert.  */
 
@@ -240,9 +240,7 @@ static int
 write_permuted_output_reservoir (size_t n_lines, struct linebuffer *lines,
                                  size_t const *permutation)
 {
-  size_t i;
-
-  for (i = 0; i < n_lines; i++)
+  for (size_t i = 0; i < n_lines; i++)
     {
       const struct linebuffer *p = &lines[permutation[i]];
       if (fwrite (p->buffer, sizeof (char), p->length, stdout) != p->length)
@@ -266,7 +264,6 @@ read_input (FILE *in, char eolbyte, char ***pline)
   size_t used;
   char *lim;
   char **line;
-  size_t i;
   size_t n_lines;
 
   /* TODO: We should limit the amount of data read here,
@@ -293,7 +290,7 @@ read_input (FILE *in, char eolbyte, char ***pline)
   *pline = line = xnmalloc (n_lines + 1, sizeof *line);
 
   line[0] = p = buf;
-  for (i = 1; i <= n_lines; i++)
+  for (size_t i = 1; i <= n_lines; i++)
     line[i] = p = next_line (p, eolbyte, lim - p);
 
   return n_lines;
@@ -307,9 +304,7 @@ static int
 write_permuted_lines (size_t n_lines, char *const *line,
                       size_t const *permutation)
 {
-  size_t i;
-
-  for (i = 0; i < n_lines; i++)
+  for (size_t i = 0; i < n_lines; i++)
     {
       char *const *p = line + permutation[i];
       size_t len = p[1] - p[0];
@@ -326,9 +321,7 @@ static int
 write_permuted_numbers (size_t n_lines, size_t lo_input,
                         size_t const *permutation, char eolbyte)
 {
-  size_t i;
-
-  for (i = 0; i < n_lines; i++)
+  for (size_t i = 0; i < n_lines; i++)
     {
       unsigned long int n = lo_input + permutation[i];
       if (printf ("%lu%c", n, eolbyte) < 0)
@@ -344,10 +337,9 @@ static int
 write_random_numbers (struct randint_source *s, size_t count,
                       size_t lo_input, size_t hi_input, char eolbyte)
 {
-  size_t i;
   const randint range = hi_input - lo_input + 1;
 
-  for (i = 0; i < count; i++)
+  for (size_t i = 0; i < count; i++)
     {
       unsigned long int j = lo_input + randint_choose (s, range);
       if (printf ("%lu%c", j, eolbyte) < 0)
@@ -364,9 +356,7 @@ static int
 write_random_lines (struct randint_source *s, size_t count,
                     char *const *lines, size_t n_lines)
 {
-  size_t i;
-
-  for (i = 0; i < count; i++)
+  for (size_t i = 0; i < count; i++)
     {
       const randint j = randint_choose (s, n_lines);
       char *const *p = lines + j;

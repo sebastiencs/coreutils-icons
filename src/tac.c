@@ -1,5 +1,5 @@
 /* tac - concatenate and print files in reverse
-   Copyright (C) 1988-2017 Free Software Foundation, Inc.
+   Copyright (C) 1988-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Jay Lepreau (lepreau@cs.utah.edu).
    GNU enhancements by David MacKenzie (djm@gnu.ai.mit.edu). */
@@ -690,9 +690,8 @@ main (int argc, char **argv)
   xset_binary_mode (STDOUT_FILENO, O_BINARY);
 
   {
-    size_t i;
     ok = true;
-    for (i = 0; file[i]; ++i)
+    for (size_t i = 0; file[i]; ++i)
       ok &= tac_file (file[i]);
   }
 

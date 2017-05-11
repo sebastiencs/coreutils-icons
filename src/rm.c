@@ -1,5 +1,5 @@
 /* 'rm' file deletion utility for GNU.
-   Copyright (C) 1988-2017 Free Software Foundation, Inc.
+   Copyright (C) 1988-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Initially written by Paul Rubin, David MacKenzie, and Richard Stallman.
    Reworked to use chdir and avoid recursion, and later, rewritten
@@ -67,7 +67,7 @@ static struct option const long_opts[] =
 
   {"one-file-system", no_argument, NULL, ONE_FILE_SYSTEM},
   {"no-preserve-root", no_argument, NULL, NO_PRESERVE_ROOT},
-  {"preserve-root", no_argument, NULL, PRESERVE_ROOT},
+  {"preserve-root", optional_argument, NULL, PRESERVE_ROOT},
 
   /* This is solely for testing.  Do not document.  */
   /* It is relatively difficult to ensure that there is a tty on stdin.
@@ -105,9 +105,8 @@ diagnose_leading_hyphen (int argc, char **argv)
 {
   /* OPTIND is unreliable, so iterate through the arguments looking
      for a file name that looks like an option.  */
-  int i;
 
-  for (i = 1; i < argc; i++)
+  for (int i = 1; i < argc; i++)
     {
       char const *arg = argv[i];
       struct stat st;
@@ -152,7 +151,11 @@ Remove (unlink) the FILE(s).\n\
 "), stdout);
       fputs (_("\
       --no-preserve-root  do not treat '/' specially\n\
-      --preserve-root   do not remove '/' (default)\n\
+      --preserve-root[=all]  do not remove '/' (default);\n\
+                              with 'all', reject any command line argument\n\
+                              on a separate device from its parent\n\
+"), stdout);
+      fputs (_("\
   -r, -R, --recursive   remove directories and their contents recursively\n\
   -d, --dir             remove empty directories\n\
   -v, --verbose         explain what is being done\n\
@@ -193,6 +196,7 @@ rm_option_init (struct rm_options *x)
   x->remove_empty_directories = false;
   x->recursive = false;
   x->root_dev_ino = NULL;
+  x->preserve_all_root = false;
   x->stdin_tty = isatty (STDIN_FILENO);
   x->verbose = false;
 
@@ -295,6 +299,17 @@ main (int argc, char **argv)
           break;
 
         case PRESERVE_ROOT:
+          if (optarg)
+            {
+              if STREQ (optarg, "all")
+                x.preserve_all_root = true;
+              else
+                {
+                  die (EXIT_FAILURE, 0,
+                       _("unrecognized --preserve-root argument: %s"),
+                       quoteaf (optarg));
+                }
+            }
           preserve_root = true;
           break;
 

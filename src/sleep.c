@@ -1,5 +1,5 @@
 /* sleep - delay for a specified amount of time.
-   Copyright (C) 1984-2017 Free Software Foundation, Inc.
+   Copyright (C) 1984-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,15 +12,14 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 #include <stdio.h>
 #include <sys/types.h>
-#include <getopt.h>
 
 #include "system.h"
-#include "c-strtod.h"
+#include "cl-strtod.h"
 #include "die.h"
 #include "error.h"
 #include "long-options.h"
@@ -46,9 +45,8 @@ usage (int status)
 Usage: %s NUMBER[SUFFIX]...\n\
   or:  %s OPTION\n\
 Pause for NUMBER seconds.  SUFFIX may be 's' for seconds (the default),\n\
-'m' for minutes, 'h' for hours or 'd' for days.  Unlike most implementations\n\
-that require NUMBER be an integer, here NUMBER may be an arbitrary floating\n\
-point number.  Given two or more arguments, pause for the amount of time\n\
+'m' for minutes, 'h' for hours or 'd' for days.  NUMBER need not be an\n\
+integer.  Given two or more arguments, pause for the amount of time\n\
 specified by the sum of their values.\n\
 \n\
 "),
@@ -98,7 +96,6 @@ apply_suffix (double *x, char suffix_char)
 int
 main (int argc, char **argv)
 {
-  int i;
   double seconds = 0.0;
   bool ok = true;
 
@@ -110,10 +107,9 @@ main (int argc, char **argv)
 
   atexit (close_stdout);
 
-  parse_long_options (argc, argv, PROGRAM_NAME, PACKAGE_NAME, Version,
-                      usage, AUTHORS, (char const *) NULL);
-  if (getopt_long (argc, argv, "", NULL, NULL) != -1)
-    usage (EXIT_FAILURE);
+  parse_gnu_standard_options_only (argc, argv, PROGRAM_NAME, PACKAGE_NAME,
+                                   Version, true, usage, AUTHORS,
+                                   (char const *) NULL);
 
   if (argc == 1)
     {
@@ -121,11 +117,11 @@ main (int argc, char **argv)
       usage (EXIT_FAILURE);
     }
 
-  for (i = optind; i < argc; i++)
+  for (int i = optind; i < argc; i++)
     {
       double s;
       const char *p;
-      if (! (xstrtod (argv[i], &p, &s, c_strtod) || errno == ERANGE)
+      if (! (xstrtod (argv[i], &p, &s, cl_strtod) || errno == ERANGE)
           /* Nonnegative interval.  */
           || ! (0 <= s)
           /* No extra chars after the number and an optional s,m,h,d char.  */

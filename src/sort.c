@@ -1,5 +1,5 @@
 /* sort - sort lines of text (with all kinds of options).
-   Copyright (C) 1988-2017 Free Software Foundation, Inc.
+   Copyright (C) 1988-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
    Written December 1988 by Mike Haertel.
    The author may be reached (Email) at the address mike@gnu.ai.mit.edu,
@@ -48,7 +48,6 @@
 #include "quote.h"
 #include "randread.h"
 #include "readtokens0.h"
-#include "stdio--.h"
 #include "stdlib--.h"
 #include "strnumcmp.h"
 #include "xmemcoll.h"
@@ -83,6 +82,11 @@ struct rlimit { size_t rlim_cur; };
 # endif
 #endif
 
+#if GNULIB_defined_pthread_functions
+# undef pthread_sigmask
+# define pthread_sigmask(how, set, oset) sigprocmask (how, set, oset)
+#endif
+
 #if !defined OPEN_MAX && defined NR_OPEN
 # define OPEN_MAX NR_OPEN
 #endif
@@ -91,14 +95,6 @@ struct rlimit { size_t rlim_cur; };
 #endif
 
 #define UCHAR_LIM (UCHAR_MAX + 1)
-
-#if HAVE_C99_STRTOLD
-# define long_double long double
-#else
-# define long_double double
-# undef strtold
-# define strtold strtod
-#endif
 
 #ifndef DEFAULT_TMPDIR
 # define DEFAULT_TMPDIR "/tmp"
@@ -374,9 +370,9 @@ static bool debug;
    number are present, temp files will be used. */
 static unsigned int nmerge = NMERGE_DEFAULT;
 
-/* Output an error to stderr using async-signal-safe routines, and _exit().
+/* Output an error to stderr and exit using async-signal-safe routines.
    This can be used safely from signal handlers,
-   and between fork() and exec() of multithreaded processes.  */
+   and between fork and exec of multithreaded processes.  */
 
 static void async_safe_die (int, const char *) ATTRIBUTE_NORETURN;
 static void
@@ -386,7 +382,7 @@ async_safe_die (int errnum, const char *errstr)
 
   /* Even if defined HAVE_STRERROR_R, we can't use it,
      as it may return a translated string etc. and even if not
-     may malloc() which is unsafe.  We might improve this
+     may call malloc which is unsafe.  We might improve this
      by testing for sys_errlist and using that if available.
      For now just report the error number.  */
   if (errnum)
@@ -638,22 +634,21 @@ struct cs_status
 };
 
 /* Enter a critical section.  */
-static struct cs_status
-cs_enter (void)
+static void
+cs_enter (struct cs_status *status)
 {
-  struct cs_status status;
-  status.valid = (sigprocmask (SIG_BLOCK, &caught_signals, &status.sigs) == 0);
-  return status;
+  int ret = pthread_sigmask (SIG_BLOCK, &caught_signals, &status->sigs);
+  status->valid = ret == 0;
 }
 
 /* Leave a critical section.  */
 static void
-cs_leave (struct cs_status status)
+cs_leave (struct cs_status const *status)
 {
-  if (status.valid)
+  if (status->valid)
     {
       /* Ignore failure when restoring the signal mask. */
-      sigprocmask (SIG_SETMASK, &status.sigs, NULL);
+      pthread_sigmask (SIG_SETMASK, &status->sigs, NULL);
     }
 }
 
@@ -832,9 +827,10 @@ exit_cleanup (void)
     {
       /* Clean up any remaining temporary files in a critical section so
          that a signal handler does not try to clean them too.  */
-      struct cs_status cs = cs_enter ();
+      struct cs_status cs;
+      cs_enter (&cs);
       cleanup ();
-      cs_leave (cs);
+      cs_leave (&cs);
     }
 
   close_stdout ();
@@ -867,15 +863,15 @@ create_temp_file (int *pfd, bool survive_fd_exhaustion)
     temp_dir_index = 0;
 
   /* Create the temporary file in a critical section, to avoid races.  */
-  cs = cs_enter ();
-  fd = mkstemp (file);
+  cs_enter (&cs);
+  fd = mkostemp (file, O_CLOEXEC);
   if (0 <= fd)
     {
       *temptail = node;
       temptail = &node->next;
     }
   saved_errno = errno;
-  cs_leave (cs);
+  cs_leave (&cs);
   errno = saved_errno;
 
   if (fd < 0)
@@ -891,13 +887,26 @@ create_temp_file (int *pfd, bool survive_fd_exhaustion)
   return node;
 }
 
-/* Return a stream for FILE, opened with mode HOW.  A null FILE means
-   standard output; HOW should be "w".  When opening for input, "-"
+/* Return a pointer to stdout status, or NULL on failure.  */
+
+static struct stat *
+get_outstatus (void)
+{
+  static int outstat_errno;
+  static struct stat outstat;
+  if (outstat_errno == 0)
+    outstat_errno = fstat (STDOUT_FILENO, &outstat) == 0 ? -1 : errno;
+  return outstat_errno < 0 ? &outstat : NULL;
+}
+
+/* Return a stream for FILE, opened with mode HOW.  If HOW is "w",
+   the file is already open on standard output, and needs to be
+   truncated unless FILE is null.  When opening for input, "-"
    means standard input.  To avoid confusion, do not return file
    descriptors STDIN_FILENO, STDOUT_FILENO, or STDERR_FILENO when
    opening an ordinary FILE.  Return NULL if unsuccessful.
 
-   fadvise() is used to specify an access pattern for input files.
+   Use fadvise to specify an access pattern for input files.
    There are a few hints we could possibly provide,
    and after careful testing it was decided that
    specifying FADVISE_SEQUENTIAL was not detrimental
@@ -920,7 +929,7 @@ create_temp_file (int *pfd, bool survive_fd_exhaustion)
    in a couple of cases:
      Merging
      Sorting with a smaller internal buffer
-   Note this option was seen to shorten the runtime for sort
+   This option was seen to shorten the runtime for sort
    on a multicore system with lots of RAM and other processes
    competing for CPU.  It could be argued that more explicit
    scheduling hints with 'nice' et. al. are more appropriate
@@ -951,14 +960,22 @@ stream_open (char const *file, char const *how)
           fp = stdin;
         }
       else
-        fp = fopen (file, how);
+        {
+          int fd = open (file, O_RDONLY | O_CLOEXEC);
+          fp = fd < 0 ? NULL : fdopen (fd, how);
+        }
       fadvise (fp, FADVISE_SEQUENTIAL);
     }
   else if (*how == 'w')
     {
       if (file && ftruncate (STDOUT_FILENO, 0) != 0)
-        die (SORT_FAILURE, errno, _("%s: error truncating"),
-             quotef (file));
+        {
+          int ftruncate_errno = errno;
+          struct stat *outst = get_outstatus ();
+          if (!outst || S_ISREG (outst->st_mode) || S_TYPEISSHM (outst))
+            die (SORT_FAILURE, ftruncate_errno, _("%s: error truncating"),
+                 quotef (file));
+        }
       fp = stdout;
     }
   else
@@ -1005,8 +1022,10 @@ xfclose (FILE *fp, char const *file)
     }
 }
 
+/* Move OLDFD to NEWFD.  If OLDFD != NEWFD, NEWFD is not close-on-exec.  */
+
 static void
-move_fd_or_die (int oldfd, int newfd)
+move_fd (int oldfd, int newfd)
 {
   if (oldfd != newfd)
     {
@@ -1017,7 +1036,7 @@ move_fd_or_die (int oldfd, int newfd)
 }
 
 /* Fork a child process for piping to and do common cleanup.  The
-   TRIES parameter tells us how many times to try to fork before
+   TRIES parameter specifies how many times to try to fork before
    giving up.  Return the PID of the child, or -1 (setting errno)
    on failure. */
 
@@ -1031,7 +1050,7 @@ pipe_fork (int pipefds[2], size_t tries)
   pid_t pid IF_LINT ( = -1);
   struct cs_status cs;
 
-  if (pipe (pipefds) < 0)
+  if (pipe2 (pipefds, O_CLOEXEC) < 0)
     return -1;
 
   /* At least NMERGE + 1 subprocesses are needed.  More could be created, but
@@ -1048,7 +1067,7 @@ pipe_fork (int pipefds[2], size_t tries)
     {
       /* This is so the child process won't delete our temp files
          if it receives a signal before exec-ing.  */
-      cs = cs_enter ();
+      cs_enter (&cs);
       saved_temphead = temphead;
       temphead = NULL;
 
@@ -1057,7 +1076,7 @@ pipe_fork (int pipefds[2], size_t tries)
       if (pid)
         temphead = saved_temphead;
 
-      cs_leave (cs);
+      cs_leave (&cs);
       errno = saved_errno;
 
       if (0 <= pid || errno != EAGAIN)
@@ -1123,11 +1142,11 @@ maybe_create_temp (FILE **pfp, bool survive_fd_exhaustion)
         }
       else if (node->pid == 0)
         {
-          /* Being the child of a multithreaded program before exec(),
+          /* Being the child of a multithreaded program before exec,
              we're restricted to calling async-signal-safe routines here.  */
           close (pipefds[1]);
-          move_fd_or_die (tempfd, STDOUT_FILENO);
-          move_fd_or_die (pipefds[0], STDIN_FILENO);
+          move_fd (tempfd, STDOUT_FILENO);
+          move_fd (pipefds[0], STDIN_FILENO);
 
           execlp (compress_program, compress_program, (char *) NULL);
 
@@ -1183,11 +1202,11 @@ open_temp (struct tempnode *temp)
       break;
 
     case 0:
-      /* Being the child of a multithreaded program before exec(),
+      /* Being the child of a multithreaded program before exec,
          we're restricted to calling async-signal-safe routines here.  */
       close (pipefds[0]);
-      move_fd_or_die (tempfd, STDIN_FILENO);
-      move_fd_or_die (pipefds[1], STDOUT_FILENO);
+      move_fd (tempfd, STDIN_FILENO);
+      move_fd (pipefds[1], STDOUT_FILENO);
 
       execlp (compress_program, compress_program, "-d", (char *) NULL);
 
@@ -1242,11 +1261,11 @@ zaptemp (char const *name)
 
   /* Unlink the temporary file in a critical section to avoid races.  */
   next = node->next;
-  cs = cs_enter ();
+  cs_enter (&cs);
   unlink_status = unlink (name);
   unlink_errno = errno;
   *pnode = next;
-  cs_leave (cs);
+  cs_leave (&cs);
 
   if (unlink_status != 0)
     error (0, unlink_errno, _("warning: cannot remove: %s"), quotef (name));
@@ -1511,9 +1530,7 @@ sort_buffer_size (FILE *const *fps, size_t nfps,
      This extra room might be needed when preparing to read EOF.  */
   size_t size = worst_case_per_input_byte + 1;
 
-  size_t i;
-
-  for (i = 0; i < nfiles; i++)
+  for (size_t i = 0; i < nfiles; i++)
     {
       struct stat st;
       off_t file_size;
@@ -1801,7 +1818,7 @@ fillbuf (struct buffer *buf, FILE *fp, char const *file)
             {
               /* Delimit the line with NUL. This eliminates the need to
                  temporarily replace the last byte with NUL when calling
-                 xmemcoll(), which increases performance.  */
+                 xmemcoll, which increases performance.  */
               *p = '\0';
               ptr = p + 1;
               line--;
@@ -1986,16 +2003,16 @@ numcompare (char const *a, char const *b)
 
 /* Work around a problem whereby the long double value returned by glibc's
    strtold ("NaN", ...) contains uninitialized bits: clear all bytes of
-   A and B before calling strtold.  FIXME: remove this function once
+   A and B before calling strtold.  FIXME: remove this function if
    gnulib guarantees that strtold's result is always well defined.  */
 static int
 nan_compare (char const *sa, char const *sb)
 {
-  long_double a;
+  long double a;
   memset (&a, 0, sizeof a);
   a = strtold (sa, NULL);
 
-  long_double b;
+  long double b;
   memset (&b, 0, sizeof b);
   b = strtold (sb, NULL);
 
@@ -2010,8 +2027,8 @@ general_numcompare (char const *sa, char const *sb)
 
   char *ea;
   char *eb;
-  long_double a = strtold (sa, &ea);
-  long_double b = strtold (sb, &eb);
+  long double a = strtold (sa, &ea);
+  long double b = strtold (sb, &eb);
 
   /* Put conversion errors at the start of the collating sequence.  */
   if (sa == ea)
@@ -2490,7 +2507,7 @@ key_warnings (struct keyfield const *gkey, bool gkey_only)
     }
 
   /* Warn about ignored global options flagged above.
-     Note if gkey is the only one in the list, all flags are cleared.  */
+     This clears all flags if UGKEY is the only one in the list.  */
   if (!default_key_compare (&ugkey)
       || (ugkey.reverse && (stable || unique) && keylist))
     {
@@ -2744,7 +2761,7 @@ compare (struct line const *a, struct line const *b)
     diff = 1;
   else if (hard_LC_COLLATE)
     {
-      /* Note xmemcoll0 is a performance enhancement as
+      /* xmemcoll0 is a performance enhancement as
          it will not unconditionally write '\0' after the
          passed in buffers, which was seen to give around
          a 3% increase in performance for short lines.  */
@@ -3186,7 +3203,7 @@ sequential_sort (struct line *restrict lines, size_t nlines,
   if (nlines == 2)
     {
       /* Declare 'swap' as int, not bool, to work around a bug
-         <http://lists.gnu.org/archive/html/bug-coreutils/2005-10/msg00086.html>
+        <https://lists.gnu.org/r/bug-coreutils/2005-10/msg00086.html>
          in the IBM xlc 6.0.0.0 compiler in 64-bit mode.  */
       int swap = (0 < compare (&lines[-1], &lines[-2]));
       if (to_temp)
@@ -3692,12 +3709,9 @@ static void
 avoid_trashing_input (struct sortfile *files, size_t ntemps,
                       size_t nfiles, char const *outfile)
 {
-  size_t i;
-  bool got_outstat = false;
-  struct stat outstat;
   struct tempnode *tempcopy = NULL;
 
-  for (i = ntemps; i < nfiles; i++)
+  for (size_t i = ntemps; i < nfiles; i++)
     {
       bool is_stdin = STREQ (files[i].name, "-");
       bool same;
@@ -3707,18 +3721,15 @@ avoid_trashing_input (struct sortfile *files, size_t ntemps,
         same = true;
       else
         {
-          if (! got_outstat)
-            {
-              if (fstat (STDOUT_FILENO, &outstat) != 0)
-                break;
-              got_outstat = true;
-            }
+          struct stat *outst = get_outstatus ();
+          if (!outst)
+            break;
 
           same = (((is_stdin
                     ? fstat (STDIN_FILENO, &instat)
                     : stat (files[i].name, &instat))
                    == 0)
-                  && SAME_INODE (instat, outstat));
+                  && SAME_INODE (instat, *outst));
         }
 
       if (same)
@@ -3739,8 +3750,8 @@ avoid_trashing_input (struct sortfile *files, size_t ntemps,
 /* Scan the input files to ensure all are accessible.
    Otherwise exit with a diagnostic.
 
-   Note this will catch common issues with permissions etc.
-   but will fail to notice issues where you can open() but not read(),
+   This will catch common issues with permissions etc.
+   but will fail to notice issues where you can open but not read,
    like when a directory is specified on some systems.
    Catching these obscure cases could slow down performance in
    common cases.  */
@@ -3748,8 +3759,7 @@ avoid_trashing_input (struct sortfile *files, size_t ntemps,
 static void
 check_inputs (char *const *files, size_t nfiles)
 {
-  size_t i;
-  for (i = 0; i < nfiles; i++)
+  for (size_t i = 0; i < nfiles; i++)
     {
       if (STREQ (files[i], "-"))
         continue;
@@ -3768,10 +3778,11 @@ check_output (char const *outfile)
 {
   if (outfile)
     {
-      int outfd = open (outfile, O_WRONLY | O_CREAT | O_BINARY, MODE_RW_UGO);
+      int oflags = O_WRONLY | O_BINARY | O_CLOEXEC | O_CREAT;
+      int outfd = open (outfile, oflags, MODE_RW_UGO);
       if (outfd < 0)
         sort_die (_("open failed"), outfile);
-      move_fd_or_die (outfd, STDOUT_FILENO);
+      move_fd (outfd, STDOUT_FILENO);
     }
 }
 
@@ -3997,10 +4008,9 @@ sort (char *const *files, size_t nfiles, char const *output_file,
 
   if (! output_file_created)
     {
-      size_t i;
       struct tempnode *node = temphead;
       struct sortfile *tempfiles = xnmalloc (ntemps, sizeof *tempfiles);
-      for (i = 0; node; i++)
+      for (size_t i = 0; node; i++)
         {
           tempfiles[i].name = node->name;
           tempfiles[i].temp = node;
@@ -4086,7 +4096,7 @@ parse_field_count (char const *string, size_t *val, char const *msgid)
       *val = n;
       if (*val == n)
         break;
-      /* Fall through.  */
+      FALLTHROUGH;
     case LONGINT_OVERFLOW:
     case LONGINT_OVERFLOW | LONGINT_INVALID_SUFFIX_CHAR:
       *val = SIZE_MAX;
@@ -4386,7 +4396,7 @@ main (int argc, char **argv)
 
         case SORT_OPTION:
           c = XARGMATCH ("--sort", optarg, sort_args, sort_types);
-          /* Fall through. */
+          FALLTHROUGH;
         case 'b':
         case 'd':
         case 'f':
@@ -4410,7 +4420,7 @@ main (int argc, char **argv)
           c = (optarg
                ? XARGMATCH ("--check", optarg, check_args, check_types)
                : 'c');
-          /* Fall through.  */
+          FALLTHROUGH;
         case 'c':
         case 'C':
           if (checkonly && checkonly != c)
@@ -4583,8 +4593,6 @@ main (int argc, char **argv)
 
   if (files_from)
     {
-      FILE *stream;
-
       /* When using --files0-from=F, you may not specify any files
          on the command-line.  */
       if (nfiles)
@@ -4595,29 +4603,21 @@ main (int argc, char **argv)
           usage (SORT_FAILURE);
         }
 
-      if (STREQ (files_from, "-"))
-        stream = stdin;
-      else
-        {
-          stream = fopen (files_from, "r");
-          if (stream == NULL)
-            die (SORT_FAILURE, errno, _("cannot open %s for reading"),
-                 quoteaf (files_from));
-        }
+      FILE *stream = xfopen (files_from, "r");
 
       readtokens0_init (&tok);
 
-      if (! readtokens0 (stream, &tok) || fclose (stream) != 0)
+      if (! readtokens0 (stream, &tok))
         die (SORT_FAILURE, 0, _("cannot read file names from %s"),
              quoteaf (files_from));
+      xfclose (stream, files_from);
 
       if (tok.n_tok)
         {
-          size_t i;
           free (files);
           files = tok.tok;
           nfiles = tok.n_tok;
-          for (i = 0; i < nfiles; i++)
+          for (size_t i = 0; i < nfiles; i++)
             {
               if (STREQ (files[i], "-"))
                 die (SORT_FAILURE, 0, _("when reading file names from stdin, "
@@ -4681,18 +4681,20 @@ main (int argc, char **argv)
 
       /* Always output the locale in debug mode, since this
          is such a common source of confusion.  */
+
+      /* OpenBSD can only set some categories with LC_ALL above,
+         so set LC_COLLATE explicitly to flag errors.  */
+      if (locale_ok)
+        locale_ok = !! setlocale (LC_COLLATE, "");
+      if (! locale_ok)
+          error (0, 0, "%s", _("failed to set locale"));
       if (hard_LC_COLLATE)
-        error (0, 0, _("using %s sorting rules"),
+        error (0, 0, _("text ordering performed using %s sorting rules"),
                quote (setlocale (LC_COLLATE, NULL)));
       else
-        {
-          /* OpenBSD can only set some categories with LC_ALL above,
-             so set LC_COLLATE explicitly to flag errors.  */
-          if (locale_ok)
-            locale_ok = !! setlocale (LC_COLLATE, "");
-          error (0, 0, "%s%s", locale_ok ? "" : _("failed to set locale; "),
-                 _("using simple byte comparison"));
-        }
+        error (0, 0, "%s",
+               _("text ordering performed using simple byte comparison"));
+
       key_warnings (&gkey, gkey_only);
     }
 
@@ -4747,9 +4749,8 @@ main (int argc, char **argv)
   if (mergeonly)
     {
       struct sortfile *sortfiles = xcalloc (nfiles, sizeof *sortfiles);
-      size_t i;
 
-      for (i = 0; i < nfiles; ++i)
+      for (size_t i = 0; i < nfiles; ++i)
         sortfiles[i].name = files[i];
 
       merge (sortfiles, 0, nfiles, outfile);

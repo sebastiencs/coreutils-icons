@@ -1,5 +1,5 @@
 /* kill -- send a signal to a process
-   Copyright (C) 2002-2017 Free Software Foundation, Inc.
+   Copyright (C) 2002-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Paul Eggert.  */
 
@@ -246,7 +246,7 @@ main (int argc, char **argv)
             optind--;
             goto no_more_options;
           }
-        /* Fall through.  */
+        FALLTHROUGH;
       case 'A': case 'B': case 'C': case 'D': case 'E':
       case 'F': case 'G': case 'H': case 'I': case 'J':
       case 'K': /*case 'L':*/ case 'M': case 'N': case 'O':
@@ -261,7 +261,7 @@ main (int argc, char **argv)
             usage (EXIT_FAILURE);
           }
         optarg--;
-        /* Fall through.  */
+        FALLTHROUGH;
       case 'n': /* -n is not documented, but is for Bash compatibility.  */
       case 's':
         if (0 <= signum)
@@ -277,7 +277,7 @@ main (int argc, char **argv)
       case 'L': /* -L is not documented, but is for procps compatibility.  */
       case 't':
         table = true;
-        /* Fall through.  */
+        FALLTHROUGH;
       case 'l':
         if (list)
           {

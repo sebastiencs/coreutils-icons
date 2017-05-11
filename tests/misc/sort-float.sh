@@ -1,7 +1,7 @@
 #!/bin/sh
 # Ensure sort -g sorts floating point limits correctly
 
-# Copyright (C) 2010-2017 Free Software Foundation, Inc.
+# Copyright (C) 2010-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ sort
@@ -56,10 +56,6 @@ dbl_minima_order; reversed=$?
 for LOC in C $LOCALE_FR; do
 
   LC_ALL=$LOC getlimits_
-
-  # See if sort should be using long doubles
-  grep '^#define HAVE_C99_STRTOLD 1' $CONFIG_HEADER > /dev/null ||
-    { LDBL_MAX="$DBL_MAX"; LDBL_MIN="$DBL_MIN"; }
 
   # If DBL_MIN happens to be smaller than LDBL_MIN, swap them,
   # so that out expected output is sorted.

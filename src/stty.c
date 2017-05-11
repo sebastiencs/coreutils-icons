@@ -1,5 +1,5 @@
 /* stty -- change and print terminal line settings
-   Copyright (C) 1990-2017 Free Software Foundation, Inc.
+   Copyright (C) 1990-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Usage: stty [-ag] [--all] [--save] [-F device] [--file=device] [setting...]
 
@@ -1089,6 +1089,17 @@ apply_settings (bool checking, const char *device_name,
                 struct termios *mode, bool *speed_was_set,
                 bool *require_set_attr)
 {
+#define check_argument(arg)						\
+  do									\
+    {									\
+      if (k == n_settings - 1 || ! settings[k+1])			\
+        {								\
+          error (0, 0, _("missing argument to %s"), quote (arg));	\
+          usage (EXIT_FAILURE);						\
+        }								\
+    }									\
+  while (0)
+
   for (int k = 1; k < n_settings; k++)
     {
       char const *arg = settings[k];
@@ -1135,11 +1146,7 @@ apply_settings (bool checking, const char *device_name,
             {
               if (STREQ (arg, control_info[i].name))
                 {
-                  if (k == n_settings - 1)
-                    {
-                      error (0, 0, _("missing argument to %s"), quote (arg));
-                      usage (EXIT_FAILURE);
-                    }
+                  check_argument (arg);
                   match_found = true;
                   ++k;
                   set_control_char (&control_info[i], settings[k], mode);
@@ -1152,11 +1159,7 @@ apply_settings (bool checking, const char *device_name,
         {
           if (STREQ (arg, "ispeed"))
             {
-              if (k == n_settings - 1)
-                {
-                  error (0, 0, _("missing argument to %s"), quote (arg));
-                  usage (EXIT_FAILURE);
-                }
+              check_argument (arg);
               ++k;
               if (checking)
                 continue;
@@ -1166,11 +1169,7 @@ apply_settings (bool checking, const char *device_name,
             }
           else if (STREQ (arg, "ospeed"))
             {
-              if (k == n_settings - 1)
-                {
-                  error (0, 0, _("missing argument to %s"), quote (arg));
-                  usage (EXIT_FAILURE);
-                }
+              check_argument (arg);
               ++k;
               if (checking)
                 continue;
@@ -1198,11 +1197,7 @@ apply_settings (bool checking, const char *device_name,
 #ifdef TIOCGWINSZ
           else if (STREQ (arg, "rows"))
             {
-              if (k == n_settings - 1)
-                {
-                  error (0, 0, _("missing argument to %s"), quote (arg));
-                  usage (EXIT_FAILURE);
-                }
+              check_argument (arg);
               ++k;
               if (checking)
                 continue;
@@ -1212,11 +1207,7 @@ apply_settings (bool checking, const char *device_name,
           else if (STREQ (arg, "cols")
                    || STREQ (arg, "columns"))
             {
-              if (k == n_settings - 1)
-                {
-                  error (0, 0, _("missing argument to %s"), quote (arg));
-                  usage (EXIT_FAILURE);
-                }
+              check_argument (arg);
               ++k;
               if (checking)
                 continue;
@@ -1236,11 +1227,7 @@ apply_settings (bool checking, const char *device_name,
           else if (STREQ (arg, "line"))
             {
               unsigned long int value;
-              if (k == n_settings - 1)
-                {
-                  error (0, 0, _("missing argument to %s"), quote (arg));
-                  usage (EXIT_FAILURE);
-                }
+              check_argument (arg);
               ++k;
               mode->c_line = value = integer_arg (settings[k], ULONG_MAX);
               if (mode->c_line != value)
@@ -1461,9 +1448,8 @@ main (int argc, char **argv)
                    quotef (device_name));
 #ifdef TESTING
               {
-                size_t i;
                 printf ("new_mode: mode\n");
-                for (i = 0; i < sizeof (new_mode); i++)
+                for (size_t i = 0; i < sizeof (new_mode); i++)
                   printf ("0x%02x: 0x%02x\n",
                           *(((unsigned char *) &new_mode) + i),
                           *(((unsigned char *) &mode) + i));
@@ -2076,14 +2062,12 @@ display_speed (struct termios *mode, bool fancy)
 static void
 display_recoverable (struct termios *mode)
 {
-  size_t i;
-
   printf ("%lx:%lx:%lx:%lx",
           (unsigned long int) mode->c_iflag,
           (unsigned long int) mode->c_oflag,
           (unsigned long int) mode->c_cflag,
           (unsigned long int) mode->c_lflag);
-  for (i = 0; i < NCCS; ++i)
+  for (size_t i = 0; i < NCCS; ++i)
     printf (":%lx", (unsigned long int) mode->c_cc[i]);
   putchar ('\n');
 }
@@ -2226,9 +2210,7 @@ static struct speed_map const speeds[] =
 static speed_t _GL_ATTRIBUTE_PURE
 string_to_baud (const char *arg)
 {
-  int i;
-
-  for (i = 0; speeds[i].string != NULL; ++i)
+  for (int i = 0; speeds[i].string != NULL; ++i)
     if (STREQ (arg, speeds[i].string))
       return speeds[i].speed;
   return (speed_t) -1;
@@ -2237,9 +2219,7 @@ string_to_baud (const char *arg)
 static unsigned long int _GL_ATTRIBUTE_PURE
 baud_to_value (speed_t speed)
 {
-  int i;
-
-  for (i = 0; speeds[i].string != NULL; ++i)
+  for (int i = 0; speeds[i].string != NULL; ++i)
     if (speed == speeds[i].speed)
       return speeds[i].value;
   return 0;

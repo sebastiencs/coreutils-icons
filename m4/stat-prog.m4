@@ -1,7 +1,7 @@
 # stat-prog.m4 serial 7
 # Record the prerequisites of src/stat.c from the coreutils package.
 
-# Copyright (C) 2002-2017 Free Software Foundation, Inc.
+# Copyright (C) 2002-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Written by Jim Meyering.
 
@@ -72,8 +72,9 @@ AC_INCLUDES_DEFAULT
       [AC_DEFINE([STRUCT_STATVFS_F_FSID_IS_INTEGER], [1],
          [Define to 1 if the f_fsid member of struct statvfs is an integer.])])
   else
-    AC_CHECK_MEMBERS([struct statfs.f_namelen, struct statfs.f_type,
-                     struct statfs.f_frsize],,, [$statfs_includes])
+    AC_CHECK_MEMBERS([struct statfs.f_namelen, struct statfs.f_namemax,
+                      struct statfs.f_type, struct statfs.f_frsize],,,
+                     [$statfs_includes])
     if test $ac_cv_header_OS_h != yes; then
       AC_COMPILE_IFELSE(
         [AC_LANG_PROGRAM(

@@ -1,5 +1,5 @@
 /* GNU's pinky.
-   Copyright (C) 1992-2017 Free Software Foundation, Inc.
+   Copyright (C) 1992-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Created by hacking who.c by Kaveh Ghazi ghazi@caip.rutgers.edu */
 
@@ -441,9 +441,7 @@ scan_entries (size_t n, const STRUCT_UTMP *utmp_buf,
         {
           if (argc_names)
             {
-              int i;
-
-              for (i = 0; i < argc_names; i++)
+              for (int i = 0; i < argc_names; i++)
                 if (STREQ_LEN (UT_USER (utmp_buf), argv_names[i], UT_USER_SIZE))
                   {
                     print_entry (utmp_buf);
@@ -477,9 +475,7 @@ short_pinky (const char *filename,
 static void
 long_pinky (const int argc_names, char *const argv_names[])
 {
-  int i;
-
-  for (i = 0; i < argc_names; i++)
+  for (int i = 0; i < argc_names; i++)
     print_long_entry (argv_names[i]);
 }
 

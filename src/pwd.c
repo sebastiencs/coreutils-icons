@@ -1,5 +1,5 @@
 /* pwd - print current directory
-   Copyright (C) 1994-2017 Free Software Foundation, Inc.
+   Copyright (C) 1994-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 #include <getopt.h>
@@ -128,9 +128,8 @@ nth_parent (size_t n)
 {
   char *buf = xnmalloc (3, n);
   char *p = buf;
-  size_t i;
 
-  for (i = 0; i < n; i++)
+  for (size_t i = 0; i < n; i++)
     {
       memcpy (p, "../", 3);
       p += 3;

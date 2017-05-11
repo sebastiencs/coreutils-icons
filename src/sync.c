@@ -1,5 +1,5 @@
 /* sync - update the super block
-   Copyright (C) 1994-2017 Free Software Foundation, Inc.
+   Copyright (C) 1994-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Jim Meyering */
 
@@ -111,8 +111,10 @@ sync_arg (enum sync_mode mode, char const *file)
       if (open_flags != (O_WRONLY | O_NONBLOCK))
         fd = open (file, O_WRONLY | O_NONBLOCK);
       if (fd < 0)
-        error (0, rd_errno, _("error opening %s"), quoteaf (file));
-      return false;
+        {
+          error (0, rd_errno, _("error opening %s"), quoteaf (file));
+          return false;
+        }
     }
 
   /* We used O_NONBLOCK above to not hang with fifos,

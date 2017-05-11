@@ -1,7 +1,7 @@
 # Make coreutils man pages.				-*-Makefile-*-
 # This is included by the top-level Makefile.am.
 
-# Copyright (C) 2002-2017 Free Software Foundation, Inc.
+# Copyright (C) 2002-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,26 +14,31 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 EXTRA_DIST += man/help2man man/dummy-man
 
+## Use the distributed man pages if cross compiling or lack perl
+if CROSS_COMPILING
+run_help2man = $(SHELL) $(srcdir)/man/dummy-man
+else
 ## Graceful degradation for systems lacking perl.
 if HAVE_PERL
 run_help2man = $(PERL) -- $(srcdir)/man/help2man
 else
 run_help2man = $(SHELL) $(srcdir)/man/dummy-man
 endif
+endif
 
 man1_MANS = @man1_MANS@
-EXTRA_DIST += $(man1_MANS:.1=.x)
+EXTRA_DIST += $(man1_MANS) $(man1_MANS:.1=.x)
 
 EXTRA_MANS = @EXTRA_MANS@
-EXTRA_DIST += $(EXTRA_MANS:.1=.x)
+EXTRA_DIST += $(EXTRA_MANS) $(EXTRA_MANS:.1=.x)
 
 ALL_MANS = $(man1_MANS) $(EXTRA_MANS)
 
-CLEANFILES += $(ALL_MANS)
+MAINTAINERCLEANFILES += $(ALL_MANS)
 
 # This is a kludge to remove generated 'man/*.1' from a non-srcdir build.
 # Without this, "make distcheck" might fail.
@@ -64,6 +69,7 @@ man/b2sum.1:     src/b2sum$(EXEEXT)
 man/base32.1:    src/base32$(EXEEXT)
 man/base64.1:    src/base64$(EXEEXT)
 man/basename.1:  src/basename$(EXEEXT)
+man/basenc.1:    src/basenc$(EXEEXT)
 man/cat.1:       src/cat$(EXEEXT)
 man/chcon.1:     src/chcon$(EXEEXT)
 man/chgrp.1:     src/chgrp$(EXEEXT)
@@ -179,13 +185,14 @@ endif
 ## Note the use of $$t/$*, rather than just '$*' as in other packages.
 ## That is necessary to avoid failures for programs that are also shell
 ## built-in functions like echo, false, printf, pwd.
-	rm -f $@ $@-t							\
+	rm -f $@-t							\
 	  && t=$*.td							\
 	  && rm -rf $$t							\
 	  && $(MKDIR_P) $$t						\
 	  && (cd $$t && $(LN_S) '$(abs_top_builddir)/src/'$$prog$(EXEEXT) \
 				$$argv$(EXEEXT))			\
 	&& : $${SOURCE_DATE_EPOCH=`cat $(srcdir)/.timestamp 2>/dev/null || :`} \
+	&& : $${TZ=UTC0} && export TZ					\
 	&& export SOURCE_DATE_EPOCH && $(run_help2man)			\
 		     --source='$(PACKAGE_STRING)'			\
 		     --include=$(srcdir)/man/$$name.x			\
@@ -198,4 +205,4 @@ endif
 	       $$t/$$name.1 > $@-t			\
 	  && rm -rf $$t							\
 	  && chmod a-w $@-t						\
-	  && mv $@-t $@
+	  && rm -f $@ && mv $@-t $@

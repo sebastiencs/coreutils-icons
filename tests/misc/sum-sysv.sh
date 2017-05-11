@@ -1,7 +1,7 @@
 #!/bin/sh
 # make sure 'sum -s' works for input whose sum of bytes is larger than 2^32
 
-# Copyright (C) 2001-2017 Free Software Foundation, Inc.
+# Copyright (C) 2001-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Avoid a problem when run in a UTF-8 locale.
 # Otherwise, Perl would try to (and fail to) interpret

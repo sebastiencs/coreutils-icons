@@ -1,6 +1,6 @@
 /* shred.c - overwrite files and devices to make it harder to recover data
 
-   Copyright (C) 1999-2017 Free Software Foundation, Inc.
+   Copyright (C) 1999-2019 Free Software Foundation, Inc.
    Copyright (C) 1997, 1998, 1999 Colin Plumb.
 
    This program is free software: you can redistribute it and/or modify
@@ -14,7 +14,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
    Written by Colin Plumb.  */
 
@@ -45,7 +45,7 @@
  * assumption out, and the assumption that you want the data processed
  * as fast as the hard drive can spin, you can do better.
  *
- * If asked to wipe a file, this also unlinks it, renaming it to in a
+ * If asked to wipe a file, this also unlinks it, renaming it in a
  * clever way to try to leave no trace of the original filename.
  *
  * This was inspired by a desire to improve on some code titled:
@@ -80,7 +80,7 @@
 #include <assert.h>
 #include <setjmp.h>
 #include <sys/types.h>
-#ifdef __linux__
+#if defined __linux__ && HAVE_SYS_MTIO_H
 # include <sys/mtio.h>
 #endif
 
@@ -93,6 +93,7 @@
 #include "human.h"
 #include "randint.h"
 #include "randread.h"
+#include "renameatu.h"
 #include "stat-size.h"
 
 /* Default number of times to overwrite.  */
@@ -185,7 +186,7 @@ If FILE is -, shred standard output.\n\
   -s, --size=N   shred this many bytes (suffixes like K, M, G accepted)\n\
 "), DEFAULT_PASSES);
       fputs (_("\
-  -u             truncate and remove file after overwriting\n\
+  -u             deallocate and remove file after overwriting\n\
       --remove[=HOW]  like -u but give control on HOW to delete;  See below\n\
   -v, --verbose  show progress\n\
   -x, --exact    do not round file sizes up to the next full block;\n\
@@ -390,7 +391,7 @@ dorewind (int fd, struct stat const *st)
 {
   if (S_ISCHR (st->st_mode))
     {
-#ifdef __linux__
+#if defined __linux__ && HAVE_SYS_MTIO_H
       /* In the Linux kernel, lseek does not work on tape devices; it
          returns a randomish value instead.  Try the low-level tape
          rewind operation first.  */
@@ -653,7 +654,6 @@ dopass (int fd, struct stat const *st, char const *qname, off_t *sizep,
     }
 
 free_pattern_mem:
-  memset (pbuf, 0, FILLPATTERN_SIZE);
   free (fill_pattern_mem);
 
   return other_error ? -1 : write_error;
@@ -975,11 +975,13 @@ do_wipefd (int fd, char const *qname, struct randint_source *s,
         }
     }
 
-  /* Now deallocate the data.  The effect of ftruncate on
-     non-regular files is unspecified, so don't worry about any
-     errors reported for them.  */
+  /* Now deallocate the data.  The effect of ftruncate is specified
+     on regular files and shared memory objects (also directories, but
+     they are not possible here); don't worry about errors reported
+     for other file types.  */
+
   if (flags->remove_file && ftruncate (fd, 0) != 0
-      && S_ISREG (st.st_mode))
+      && (S_ISREG (st.st_mode) || S_TYPEISSHM (&st)))
     {
       error (0, errno, _("%s: error truncating"), qname);
       ok = false;
@@ -987,7 +989,6 @@ do_wipefd (int fd, char const *qname, struct randint_source *s,
     }
 
 wipefd_out:
-  memset (passarray, 0, flags->n_iterations * sizeof (int));
   free (passarray);
   return ok;
 }
@@ -1079,7 +1080,6 @@ wipename (char *oldname, char const *qoldname, struct Options const *flags)
 {
   char *newname = xstrdup (oldname);
   char *base = last_component (newname);
-  size_t len = base_len (base);
   char *dir = dir_name (newname);
   char *qdir = xstrdup (quotef (dir));
   bool first = true;
@@ -1092,49 +1092,36 @@ wipename (char *oldname, char const *qoldname, struct Options const *flags)
   if (flags->verbose)
     error (0, 0, _("%s: removing"), qoldname);
 
-  while ((flags->remove_file != remove_unlink) && len)
-    {
-      memset (base, nameset[0], len);
-      base[len] = 0;
-      do
-        {
-          struct stat st;
-          if (lstat (newname, &st) < 0)
-            {
-              if (rename (oldname, newname) == 0)
-                {
-                  if (0 <= dir_fd && dosync (dir_fd, qdir) != 0)
-                    ok = false;
-                  if (flags->verbose)
-                    {
-                      /*
-                       * People seem to understand this better than talking
-                       * about renaming oldname.  newname doesn't need
-                       * quoting because we picked it.  oldname needs to
-                       * be quoted only the first time.
-                       */
-                      char const *old = (first ? qoldname : oldname);
-                      error (0, 0, _("%s: renamed to %s"),
-                             old, newname);
-                      first = false;
-                    }
-                  memcpy (oldname + (base - newname), base, len + 1);
-                  break;
-                }
-              else
-                {
-                  /* The rename failed: give up on this length.  */
-                  break;
-                }
-            }
-          else
-            {
-              /* newname exists, so increment BASE so we use another */
-            }
-        }
-      while (incname (base, len));
-      len--;
-    }
+  if (flags->remove_file != remove_unlink)
+    for (size_t len = base_len (base); len != 0; len--)
+      {
+        memset (base, nameset[0], len);
+        base[len] = 0;
+        bool rename_ok;
+        while (! (rename_ok = (renameatu (AT_FDCWD, oldname, AT_FDCWD, newname,
+                                          RENAME_NOREPLACE)
+                               == 0))
+               && errno == EEXIST && incname (base, len))
+          continue;
+        if (rename_ok)
+          {
+            if (0 <= dir_fd && dosync (dir_fd, qdir) != 0)
+              ok = false;
+            if (flags->verbose)
+              {
+                /* People seem to understand this better than talking
+                   about renaming OLDNAME.  NEWNAME doesn't need
+                   quoting because we picked it.  OLDNAME needs to be
+                   quoted only the first time.  */
+                char const *old = first ? qoldname : oldname;
+                error (0, 0,
+                       _("%s: renamed to %s"), old, newname);
+                first = false;
+              }
+            memcpy (oldname + (base - newname), base, len + 1);
+          }
+      }
+
   if (unlink (oldname) != 0)
     {
       error (0, errno, _("%s: failed to remove"), qoldname);

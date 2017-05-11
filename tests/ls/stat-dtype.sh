@@ -3,7 +3,7 @@
 # Also check for the dtype-related (and fs-type dependent) bug
 # in coreutils-6.0 that made ls -CF columns misaligned.
 
-# Copyright (C) 2006-2017 Free Software Foundation, Inc.
+# Copyright (C) 2006-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # The trick is to create an un-stat'able symlink and to see if ls
 # can report its type nonetheless, using dirent.d_type.
@@ -42,19 +42,18 @@ chmod 600 e || framework_failure_
 
 
 ls --file-type d > out || fail=1
-cat <<\EOF > exp || fail=1
+cat <<\EOF > exp || framework_failure_
 s@
 EOF
 
 compare exp out || fail=1
 
-rm -f out exp
 # Check for the ls -CF misaligned-columns bug:
 ls -CF e > out || fail=1
 
 # coreutils-6.0 would print two spaces after the first slash,
 # rather than the appropriate TAB.
-printf 'a2345/\tb/\n' > exp || fail=1
+printf 'a2345/\tb/\n' > exp || framework_failure_
 
 compare exp out || fail=1
 

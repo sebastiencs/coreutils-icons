@@ -1,5 +1,5 @@
 /* chroot -- run command or shell with special root directory
-   Copyright (C) 1995-2017 Free Software Foundation, Inc.
+   Copyright (C) 1995-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Roland McGrath.  */
 
@@ -207,7 +207,7 @@ Run COMMAND with root directory set to NEWROOT.\n\
       fputs (VERSION_OPTION_DESCRIPTION, stdout);
       fputs (_("\
 \n\
-If no command is given, run '${SHELL} -i' (default: '/bin/sh -i').\n\
+If no command is given, run '\"$SHELL\" -i' (default: '/bin/sh -i').\n\
 "), stdout);
       emit_ancillary_info (PROGRAM_NAME);
     }

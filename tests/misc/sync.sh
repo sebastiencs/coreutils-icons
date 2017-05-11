@@ -1,7 +1,7 @@
 #!/bin/sh
 # Test various sync(1) operations
 
-# Copyright (C) 2015-2017 Free Software Foundation, Inc.
+# Copyright (C) 2015-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,12 +14,12 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ sync
 
-touch file
+touch file || framework_failure_
 
 # fdatasync+syncfs is nonsensical
 returns_ 1 sync --data --file-system || fail=1
@@ -30,6 +30,11 @@ returns_ 1 sync -d || fail=1
 # Test syncing of file (fsync) (little side effects)
 sync file || fail=1
 
+# Test syncing of write-only file - which failed since adding argument
+# support to sync in coreutils-8.24.
+chmod 0200 file || framework_failure_
+sync file || fail=1
+
 # Ensure multiple args are processed and diagnosed
 returns_ 1 sync file nofile || fail=1
 
@@ -37,7 +42,9 @@ returns_ 1 sync file nofile || fail=1
 mkdir norw || framework_failure_
 chmod 0 norw || framework_failure_
 if ! test -r norw; then
-  sync norw 2>err
+  returns_ 1 sync norw 2>errt
+  # AIX gives "Is a directory"
+  sed 's/Is a directory/Permission denied/' <errt >err || framework_failure_
   printf "sync: error opening 'norw': Permission denied\n" >exp
   compare exp err || fail=1
 fi

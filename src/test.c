@@ -2,7 +2,7 @@
 
 /* Modified to run with the GNU shell by bfox. */
 
-/* Copyright (C) 1987-2017 Free Software Foundation, Inc.
+/* Copyright (C) 1987-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Define TEST_STANDALONE to get the /bin/test version.  Otherwise, you get
    the shell builtin version. */
@@ -72,7 +72,6 @@ static int pos;		/* The offset of the current argument in ARGV. */
 static int argc;	/* The number of arguments present in ARGV. */
 static char **argv;	/* The argument list. */
 
-static bool test_unop (char const *s);
 static bool unary_operator (void);
 static bool binary_operator (bool);
 static bool two_arguments (void);
@@ -258,12 +257,7 @@ term (void)
 
   /* It might be a switch type argument.  */
   else if (argv[pos][0] == '-' && argv[pos][1] && argv[pos][2] == '\0')
-    {
-      if (test_unop (argv[pos]))
-        value = unary_operator ();
-      else
-        test_syntax_error (_("%s: unary operator expected"), quote (argv[pos]));
-    }
+    value = unary_operator ();
   else
     {
       value = (argv[pos][0] != '\0');
@@ -399,6 +393,7 @@ unary_operator (void)
   switch (argv[pos][1])
     {
     default:
+      test_syntax_error (_("%s: unary operator expected"), quote (argv[pos]));
       return false;
 
       /* All of the following unary operators use unary_advance (), which
@@ -406,8 +401,7 @@ unary_operator (void)
          pos right past it.  This means that pos - 1 is the location of the
          argument. */
 
-    case 'a':			/* file exists in the file system? */
-    case 'e':
+    case 'e':			/* file exists in the file system? */
       unary_advance ();
       return stat (argv[pos - 1], &stat_buf) == 0;
 
@@ -422,6 +416,16 @@ unary_operator (void)
     case 'x':			/* File is executable? */
       unary_advance ();
       return euidaccess (argv[pos - 1], X_OK) == 0;
+
+    case 'N':  /* File exists and has been modified since it was last read? */
+      {
+        unary_advance ();
+        if (stat (argv[pos - 1], &stat_buf) != 0)
+          return false;
+        struct timespec atime = get_stat_atime (&stat_buf);
+        struct timespec mtime = get_stat_mtime (&stat_buf);
+        return (timespec_cmp (mtime, atime) > 0);
+      }
 
     case 'O':			/* File is owned by you? */
       {
@@ -577,26 +581,6 @@ expr (void)
   return or ();		/* Same with this. */
 }
 
-/* Return true if OP is one of the test command's unary operators. */
-static bool
-test_unop (char const *op)
-{
-  if (op[0] != '-')
-    return false;
-
-  switch (op[1])
-    {
-    case 'a': case 'b': case 'c': case 'd': case 'e':
-    case 'f': case 'g': case 'h': case 'k': case 'n':
-    case 'o': case 'p': case 'r': case 's': case 't':
-    case 'u': case 'w': case 'x': case 'z':
-    case 'G': case 'L': case 'O': case 'S': case 'N':
-      return true;
-    default:
-      return false;
-    }
-}
-
 static bool
 one_argument (void)
 {
@@ -617,10 +601,7 @@ two_arguments (void)
            && argv[pos][1] != '\0'
            && argv[pos][2] == '\0')
     {
-      if (test_unop (argv[pos]))
-        value = unary_operator ();
-      else
-        test_syntax_error (_("%s: unary operator expected"), quote (argv[pos]));
+      value = unary_operator ();
     }
   else
     beyond ();
@@ -686,7 +667,7 @@ posixtest (int nargs)
             advance (false);
             break;
           }
-        /* FALLTHROUGH */
+        FALLTHROUGH;
       case 5:
       default:
         if (nargs <= 0)
@@ -770,6 +751,7 @@ EXPRESSION is true or false and sets exit status.  It is one of:\n\
 "), stdout);
       fputs (_("\
   -L FILE     FILE exists and is a symbolic link (same as -h)\n\
+  -N FILE     FILE exists and has been modified since it was last read\n\
   -O FILE     FILE exists and is owned by the effective user ID\n\
   -p FILE     FILE exists and is a named pipe\n\
   -r FILE     FILE exists and read permission is granted\n\

@@ -2,7 +2,7 @@
 # Ensure that rm works even when run from a directory
 # for which the user has no access at all.
 
-# Copyright (C) 2004-2017 Free Software Foundation, Inc.
+# Copyright (C) 2004-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ rm
@@ -34,7 +34,7 @@ set +x
 test -d "$p/abs1" && fail=1
 test -d "$p/abs2" && fail=1
 
-cat <<\EOF > exp || fail=1
+cat <<\EOF > exp || framework_failure_
 rm: cannot remove 'rel': Permission denied
 EOF
 

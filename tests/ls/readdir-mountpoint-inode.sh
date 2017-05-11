@@ -1,7 +1,7 @@
 #!/bin/sh
 # ensure that ls -i works also for mount points
 
-# Copyright (C) 2009-2017 Free Software Foundation, Inc.
+# Copyright (C) 2009-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ ls
@@ -55,7 +55,10 @@ inode_via_readdir()
   esac
   opts=$(ls_ignore_options "$base")
   parent_dir=$(dirname "$mount_point")
-  eval "ls -i $opts '$parent_dir'" | sed 's/ .*//'
+  ls_out=$(eval "ls -i $opts '$parent_dir'")
+  test $? -eq 0 || \
+    skip_ "'$parent_dir' is not readable for current user"
+  echo $ls_out | sed 's/ .*//'
 }
 
 while read dir; do

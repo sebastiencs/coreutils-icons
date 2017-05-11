@@ -1,7 +1,7 @@
 #!/bin/sh
 # Show fts fails on old-fashioned systems.
 
-# Copyright (C) 2006-2017 Free Software Foundation, Inc.
+# Copyright (C) 2006-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Show that fts (hence du, chmod, chgrp, chown) fails when all of the
 # following are true:
@@ -30,6 +30,8 @@
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ du
+
+require_perl_
 
 # ecryptfs for example uses some of the file name space
 # for encrypting filenames, so we must check dynamically.
@@ -58,7 +60,6 @@ dir=$(printf '%200s\n' ' '|tr ' ' x)
 
 cwd=$(pwd)
 # Use perl instead:
-: ${PERL=perl}
 $PERL \
     -e 'my $d = '$dir'; foreach my $i (1..52)' \
     -e '  { mkdir ($d, 0700) && chdir $d or die "$!" }' \

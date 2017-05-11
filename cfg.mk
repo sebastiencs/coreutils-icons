@@ -1,5 +1,5 @@
 # Customize maint.mk                           -*- makefile -*-
-# Copyright (C) 2003-2017 Free Software Foundation, Inc.
+# Copyright (C) 2003-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,14 +12,14 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Used in maint.mk's web-manual rule
 manual_title = Core GNU utilities
 
 # Use the direct link.  This is guaranteed to work immediately, while
 # it can take a while for the faster mirror links to become usable.
-url_dir_list = http://ftp.gnu.org/gnu/$(PACKAGE)
+url_dir_list = https://ftp.gnu.org/gnu/$(PACKAGE)
 
 # Exclude bundled external projects from syntax checks
 VC_LIST_ALWAYS_EXCLUDE_REGEX = src/blake2/.*$$
@@ -48,7 +48,7 @@ export VERBOSE = yes
 # 4914152 9e
 export XZ_OPT = -8e
 
-old_NEWS_hash = fbfecedc8eaff3d296b43a9f1db2a269
+old_NEWS_hash = 2672dea4d532560bb2fb3a7792a2b2c5
 
 # Add an exemption for sc_makefile_at_at_check.
 _makefile_at_at_check_exceptions = ' && !/^cu_install_prog/ && !/dynamic-dep/'
@@ -250,6 +250,11 @@ sc_prohibit-quotearg:
 	halt='Unstyled diagnostic quoting detected' \
 	  $(_sc_search_regexp)
 
+sc_prohibit-skip:
+	@prohibit='\|\| skip ' \
+	halt='Use skip_ not skip' \
+	  $(_sc_search_regexp)
+
 sc_sun_os_names:
 	@grep -nEi \
 	    'solaris[^[:alnum:]]*2\.(7|8|9|[1-9][0-9])|sunos[^[:alnum:]][6-9]' \
@@ -320,11 +325,12 @@ sc_prohibit-gl-attributes:
 	  $(_sc_search_regexp)
 
 # Look for lines longer than 80 characters, except omit:
-# - program-generated long lines in diff headers,
+# - urls
 # - the help2man script copied from upstream,
 # - tests involving long checksum lines, and
 # - the 'pr' test cases.
 FILTER_LONG_LINES =						\
+  \|^[^:]*NEWS:.*https\{,1\}://| d;					\
   \|^[^:]*man/help2man:| d;					\
   \|^[^:]*tests/misc/sha[0-9]*sum.*\.pl[-:]| d;			\
   \|^[^:]*tests/pr/|{ \|^[^:]*tests/pr/pr-tests:| !d; };
@@ -786,11 +792,13 @@ sc_gitignore_missing:
 		'entries to .gitignore' >&2; exit 1; } || :
 
 # Flag redundant entries in .gitignore
-sc_gitignore_redundant:
-	@{ grep ^/lib $(srcdir)/.gitignore;				\
-	   sed 's|^|/lib|' $(srcdir)/lib/.gitignore; } |		\
-	    sort | uniq -d | grep . && { echo '$(ME): Remove above'	\
-	      'entries from .gitignore' >&2; exit 1; } || :
+# Disabled for now as too aggressive flagging
+# entries like /lib/arg-nonnull.h
+#sc_gitignore_redundant:
+#	@{ grep ^/lib $(srcdir)/.gitignore;				\
+#	   sed 's|^|/lib|' $(srcdir)/lib/.gitignore; } |		\
+#	    sort | uniq -d | grep . && { echo '$(ME): Remove above'	\
+#	      'entries from .gitignore' >&2; exit 1; } || :
 
 sc_prohibit-form-feed:
 	@prohibit=$$'\f' \
@@ -820,8 +828,9 @@ exclude_file_name_regexp--sc_system_h_headers = \
   ^src/((die|system|copy)\.h|make-prime-list\.c)$$
 
 _src = (false|lbracket|ls-(dir|ls|vdir)|tac-pipe|uname-(arch|uname))
+_gl_src = (xdecto.max|cl-strtold)
 exclude_file_name_regexp--sc_require_config_h_first = \
-  (^lib/buffer-lcm\.c|gl/lib/xdecto.max\.c|src/$(_src)\.c)$$
+  (^lib/buffer-lcm\.c|gl/lib/$(_gl_src)\.c|src/$(_src)\.c)$$
 exclude_file_name_regexp--sc_require_config_h = \
   $(exclude_file_name_regexp--sc_require_config_h_first)
 

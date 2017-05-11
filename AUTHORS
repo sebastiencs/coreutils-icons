@@ -6,6 +6,7 @@ b2sum: Padraig Brady, Samuel Neves
 base32: Simon Josefsson
 base64: Simon Josefsson
 basename: David MacKenzie
+basenc: Simon Josefsson, Assaf Gordon
 cat: Torbjorn Granlund, Richard M. Stallman
 chcon: Russell Coker, Jim Meyering
 chgrp: David MacKenzie, Jim Meyering
@@ -26,7 +27,7 @@ dircolors: H. Peter Anvin
 dirname: David MacKenzie, Jim Meyering
 du: Torbjorn Granlund, David MacKenzie, Paul Eggert, Jim Meyering
 echo: Brian Fox, Chet Ramey
-env: Richard Mlynarik, David MacKenzie
+env: Richard Mlynarik, David MacKenzie, Assaf Gordon
 expand: David MacKenzie
 expr: Mike Parker, James Youngman, Paul Eggert
 factor: Paul Rubin, Torbjörn Granlund, Niels Möller

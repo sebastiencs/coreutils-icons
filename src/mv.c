@@ -1,5 +1,5 @@
 /* mv -- move or rename files
-   Copyright (C) 1986-2017 Free Software Foundation, Inc.
+   Copyright (C) 1986-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Mike Parker, David MacKenzie, and Jim Meyering */
 
@@ -31,6 +31,7 @@
 #include "error.h"
 #include "filenamecat.h"
 #include "remove.h"
+#include "renameatu.h"
 #include "root-dev-ino.h"
 #include "priv-set.h"
 
@@ -98,6 +99,8 @@ rm_option_init (struct rm_options *x)
       die (EXIT_FAILURE, errno, _("failed to get attributes of %s"),
            quoteaf ("/"));
   }
+
+  x->preserve_all_root = false;
 }
 
 static void
@@ -336,6 +339,7 @@ main (int argc, char **argv)
   int c;
   bool ok;
   bool make_backups = false;
+  char const *backup_suffix = NULL;
   char *version_control_string = NULL;
   struct cp_options x;
   char *target_directory = NULL;
@@ -405,7 +409,7 @@ main (int argc, char **argv)
           break;
         case 'S':
           make_backups = true;
-          simple_backup_suffix = optarg;
+          backup_suffix = optarg;
           break;
         case 'Z':
           /* As a performance enhancement, don't even bother trying
@@ -451,12 +455,22 @@ main (int argc, char **argv)
   else if (!target_directory)
     {
       assert (2 <= n_files);
-      if (target_directory_operand (file[n_files - 1]))
-        target_directory = file[--n_files];
+      if (n_files == 2)
+        x.rename_errno = (renameatu (AT_FDCWD, file[0], AT_FDCWD, file[1],
+                                     RENAME_NOREPLACE)
+                          ? errno : 0);
+      if (x.rename_errno != 0 && target_directory_operand (file[n_files - 1]))
+        {
+          x.rename_errno = -1;
+          target_directory = file[--n_files];
+        }
       else if (2 < n_files)
         die (EXIT_FAILURE, 0, _("target %s is not a directory"),
              quoteaf (file[n_files - 1]));
     }
+
+  if (x.interactive == I_ALWAYS_NO)
+    x.update = false;
 
   if (make_backups && x.interactive == I_ALWAYS_NO)
     {
@@ -469,13 +483,12 @@ main (int argc, char **argv)
                    ? xget_version (_("backup type"),
                                    version_control_string)
                    : no_backups);
+  set_simple_backup_suffix (backup_suffix);
 
   hash_init ();
 
   if (target_directory)
     {
-      int i;
-
       /* Initialize the hash table only if we'll need it.
          The problem it is used to detect can arise only if there are
          two or more files to move.  */
@@ -483,11 +496,17 @@ main (int argc, char **argv)
         dest_info_init (&x);
 
       ok = true;
-      for (i = 0; i < n_files; ++i)
-        ok &= movefile (file[i], target_directory, true, &x);
+      for (int i = 0; i < n_files; ++i)
+        {
+          x.last_file = i + 1 == n_files;
+          ok &= movefile (file[i], target_directory, true, &x);
+        }
     }
   else
-    ok = movefile (file[0], file[1], false, &x);
+    {
+      x.last_file = true;
+      ok = movefile (file[0], file[1], false, &x);
+    }
 
   return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }

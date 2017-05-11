@@ -1,7 +1,7 @@
 #!/bin/sh
 # ensure that cp's --no-preserve=mode works correctly
 
-# Copyright (C) 2002-2017 Free Software Foundation, Inc.
+# Copyright (C) 2002-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,41 +14,45 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ cp
 
-rm -f a b c
-umask 0022
-touch a
-touch b
-chmod 600 b
+get_mode() { stat -c%f "$1"; }
+
+umask 0022 || framework_failure_
 
 #regular file test
+touch a b || framework_failure_
+chmod 600 b || framework_failure_
 cp --no-preserve=mode b c || fail=1
-mode_a=$(ls -l a | gawk '{print $1}')
-mode_c=$(ls -l c | gawk '{print $1}')
-test "$mode_a" = "$mode_c" || fail=1
+test "$(get_mode a)" = "$(get_mode c)" || fail=1
 
-rm -rf d1 d2 d3
-mkdir d1 d2
-chmod 705 d2
+#existing destination test
+chmod 600 c || framework_failure_
+cp --no-preserve=mode a b || fail=1
+test "$(get_mode b)" = "$(get_mode c)" || fail=1
 
 #directory test
+mkdir d1 d2 || framework_failure_
+chmod 705 d2 || framework_failure_
 cp --no-preserve=mode -r d2 d3 || fail=1
-mode_d1=$(ls -l d1 | gawk '{print $1}')
-mode_d3=$(ls -l d3 | gawk '{print $1}')
-test "$mode_d1" = "$mode_d3" || fail=1
-
-rm -f a b c
-touch a
-chmod 600 a
+test "$(get_mode d1)" = "$(get_mode d3)" || fail=1
 
 #contradicting options test
+rm -f a b || framework_failure_
+touch a || framework_failure_
+chmod 600 a || framework_failure_
 cp --no-preserve=mode --preserve=all a b || fail=1
-mode_a=$(ls -l a | gawk '{print $1}')
-mode_b=$(ls -l b | gawk '{print $1}')
-test "$mode_a" = "$mode_b" || fail=1
+test "$(get_mode a)" = "$(get_mode b)" || fail=1
+
+#fifo test
+if mkfifo fifo; then
+  cp -a --no-preserve=mode fifo fifo_copy || fail=1
+  #ensure default perms set appropriate for non regular files
+  #which wasn't done between v8.20 and 8.29 inclusive
+  test "$(get_mode fifo)" = "$(get_mode fifo_copy)" || fail=1
+fi
 
 Exit $fail

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Test --time-style in programs like 'ls'.
 
-# Copyright (C) 2016-2017 Free Software Foundation, Inc.
+# Copyright (C) 2016-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ du
@@ -42,7 +42,7 @@ sed 's/[^	]*	//' duout >dued || framework_failure_
 sed 's/[^ ]* *[^ ]* *[^ ]* *[^ ]* *//' lsout >lsed || framework_failure_
 sed '/^$/d' prout >pred || framework_failure_
 
-cat <<\EOF > duexp || fail=1
+cat <<\EOF > duexp || framework_failure_
 1970-07-08 09:10:11.000000000 +0000	a
 1970-07-08 09:10	a
 1970-07-08	a
@@ -65,7 +65,7 @@ cat <<\EOF > duexp || fail=1
 %bJul%bJul	a
 EOF
 
-cat <<\EOF > lsexp || fail=1
+cat <<\EOF > lsexp || framework_failure_
 1970-07-08 09:10:11.000000000 +0000 a
 1970-07-08 09:10 a
 1970-07-08  a
@@ -92,7 +92,7 @@ Jul  8  1970 a
 %bJul%bJul a
 EOF
 
-cat <<\EOF > prexp || fail=1
+cat <<\EOF > prexp || framework_failure_
 +1970-07-08 09:10:11 +0000 (UTC)                a                 Page 1
 hello
 +%bJul%bJul                           a                           Page 1

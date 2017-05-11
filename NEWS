@@ -4,6 +4,280 @@ GNU coreutils NEWS                                    -*- outline -*-
 
 ** Bug fixes
 
+  ln works again on old systems without O_DIRECTORY support (like Solaris 10),
+  and on systems where symlink ("x", ".") fails with errno == EINVAL
+  (like Solaris 10 and Solaris 11).
+  [bug introduced in coreutils-8.31]
+
+
+* Noteworthy changes in release 8.31 (2019-03-10) [stable]
+
+** Bug fixes
+
+  'base64 a b' now correctly diagnoses 'b' as the extra operand, not 'a'.
+  [bug introduced in coreutils-5.3.0]
+
+  When B already exists, 'cp -il A B' no longer immediately fails
+  after asking the user whether to proceed.
+  [This bug was present in "the beginning".]
+
+  df no longer corrupts displayed multibyte characters on macOS.
+  [bug introduced with coreutils-8.18]
+
+  seq no longer outputs inconsistent decimal point characters
+  for the last number, when locales are misconfigured.
+  [bug introduced in coreutils-7.0]
+
+  shred, sort, and split no longer falsely report ftruncate errors
+  when outputting to less-common file types.  For example, the shell
+  command 'sort /dev/null -o /dev/stdout | cat' no longer fails with
+  an "error truncating" diagnostic.
+  [bug was introduced with coreutils-8.18 for sort and split, and
+   (for shared memory objects only) with fileutils-4.1 for shred]
+
+  sync no longer fails for write-only file arguments.
+  [bug introduced with argument support to sync in coreutils-8.24]
+
+  'tail -f file | filter' no longer exits immediately on AIX.
+  [bug introduced in coreutils-8.28]
+
+  'tail -f file | filter' no longer goes into an infinite loop
+  if filter exits and SIGPIPE is ignored.
+  [bug introduced in coreutils-8.28]
+
+** Changes in behavior
+
+  cksum, dd, hostid, hostname, link, logname, sleep, tsort, unlink,
+  uptime, users, whoami, yes: now always process --help and --version options,
+  regardless of any other arguments present before any optional '--'
+  end-of-options marker.
+
+  nohup now processes --help and --version as first options even if other
+  parameters follow.
+
+  'yes a -- b' now outputs 'a b' instead of including the end-of-options
+  marker as before: 'a -- b'.
+
+  echo now always processes backslash escapes when the POSIXLY_CORRECT
+  environment variable is set.
+
+  When possible 'ln A B' now merely links A to B and reports an error
+  if this fails, instead of statting A and B before linking.  This
+  uses fewer system calls and avoids some races.  The old statting
+  approach is still used in situations where hard links to directories
+  are allowed (e.g., NetBSD when superuser).
+
+  ls --group-directories-first will also group symlinks to directories.
+
+  'test -a FILE' is not supported anymore.  Long ago, there were concerns about
+  the high probability of humans confusing the -a primary with the -a binary
+  operator, so POSIX changed this to 'test -e FILE'.  Scripts using it were
+  already broken and non-portable; the -a unary operator was never documented.
+
+  wc now treats non breaking space characters as word delimiters
+  unless the POSIXLY_CORRECT environment variable is set.
+
+** New features
+
+  id now supports specifying multiple users.
+
+  'date' now supports the '+' conversion specification flag,
+  introduced in POSIX.1-2017.
+
+  printf, seq, sleep, tail, and timeout now accept floating point
+  numbers in either the current or the C locale.  For example, if the
+  current locale's decimal point is ',', 'sleep 0,1' and 'sleep 0.1'
+  now mean the same thing.  Previously, these commands accepted only
+  C-locale syntax with '.' as the decimal point.  The new behavior is
+  more compatible with other implementations in non-C locales.
+
+  test now supports the '-N FILE' unary operator (like e.g. bash) to check
+  whether FILE exists and has been modified since it was last read.
+
+  env now supports '--default-signal[=SIG]', '--ignore-signal[=SIG]', and
+  '--block-signal[=SIG], to setup signal handling before executing a program.
+
+  env now supports '--list-signal-handling' to indicate non-default
+  signal handling before executing a program.
+
+** New commands
+
+  basenc is added to complement existing base64,base32 commands,
+  and encodes and decodes printable text using various common encodings:
+  base64,base64url,base32,base32hex,base16,base2,z85.
+
+** Improvements
+
+  ls -l now better aligns abbreviated months containing digits,
+  which is common in Asian locales.
+
+  stat and tail now know about the "sdcardfs" file system on Android.
+  stat -f -c%T now reports the file system type, and tail -f uses inotify.
+
+  stat now prints file creation time when supported by the file system,
+  on GNU Linux systems with glibc >= 2.28 and kernel >= 4.11.
+
+
+* Noteworthy changes in release 8.30 (2018-07-01) [stable]
+
+** Bug fixes
+
+  'cp --symlink SRC DST' will again correctly validate DST.
+  If DST is a regular file and SRC is a symlink to DST,
+  then cp will no longer allow that operation to clobber DST.
+  Also with -d, if DST is a symlink, then it can always be replaced,
+  even if it points to SRC on a separate device.
+  [bugs introduced with coreutils-8.27]
+
+  'cp -n -u' and 'mv -n -u' now consistently ignore the -u option.
+  Previously, this option combination suffered from race conditions
+  that caused -u to sometimes override -n.
+  [bug introduced with coreutils-7.1]
+
+  'cp -a --no-preserve=mode' now sets appropriate default permissions
+  for non regular files like fifos and character device nodes etc.,
+  and leaves mode bits of existing files unchanged.
+  Previously it would have set executable bits on created special files,
+  and set mode bits for existing files as if they had been created.
+  [bug introduced with coreutils-8.20]
+
+  'cp --remove-destination file symlink' now removes the symlink
+  even if it can't be traversed.
+  [bug introduced with --remove-destination in fileutils-4.1.1]
+
+  ls no longer truncates the abbreviated month names that have a
+  display width between 6 and 12 inclusive.  Previously this would have
+  output ambiguous months for Arabic or Catalan locales.
+
+  'ls -aA' is now equivalent to 'ls -A', since -A now overrides -a.
+  [bug introduced in coreutils-5.3.0]
+
+  'mv -n A B' no longer suffers from a race condition that can
+  overwrite a simultaneously-created B.  This bug fix requires
+  platform support for the renameat2 or renameatx_np syscalls, found
+  in recent Linux and macOS kernels.  As a side effect, ‘mv -n A A’
+  now silently does nothing if A exists.
+  [bug introduced with coreutils-7.1]
+
+** Changes in behavior
+
+  'cp --force file symlink' now removes the symlink even if
+  it is self referential.
+
+  ls --color now matches file extensions case insensitively.
+
+** New features
+
+  cp --reflink now supports --reflink=never to enforce a standard copy.
+
+  env supports a new -v/--debug option to show verbose information about
+  each processing step.
+
+  env supports a new -S/--split-string=S option to split a single argument
+  string into multiple arguments. Used to pass multiple arguments in scripts
+  (shebang lines).
+
+  md5sum accepts a new option: --zero (-z) to delimit the output lines with a
+  NUL instead of a newline character.  This also disables file name escaping.
+  This also applies to sha*sum and b2sum.
+
+  rm --preserve-root now supports the --preserve-root=all option to
+  reject any command line argument that is mounted to a separate file system.
+
+** Improvements
+
+  cut supports line lengths up to the max file size on 32 bit systems.
+  Previously only offsets up to SIZE_MAX-1 were supported.
+
+  stat and tail now know about the "exfs" file system, which is a
+  version of XFS.  stat -f --format=%T now reports the file system type,
+  and tail -f uses inotify.
+
+  wc avoids redundant processing of ASCII text in multibyte locales,
+  which is especially significant on macOS.
+
+
+* Noteworthy changes in release 8.29 (2017-12-27) [stable]
+
+** Bug fixes
+
+  b2sum no longer crashes when processing certain truncated check files.
+  [bug introduced with b2sum coreutils-8.26]
+
+  dd now ensures the correct cache ranges are specified for the "nocache"
+  and "direct" flags.  Previously some pages in the page cache were not
+  invalidated.  [bug introduced for "direct" in coreutils-7.5,
+  and with the "nocache" implementation in coreutils-8.11]
+
+  df no longer hangs when given a fifo argument.
+  [bug introduced in coreutils-7.3]
+
+  ptx -S no longer infloops for a pattern which returns zero-length matches.
+  [the bug dates back to the initial implementation]
+
+  shred --remove will again repeatedly rename files with shortening names
+  to attempt to hide the original length of the file name.
+  [bug introduced in coreutils-8.28]
+
+  stty no longer crashes when processing settings with -F also specified.
+  [bug introduced in fileutils-4.0]
+
+  tail --bytes again supports non seekable inputs on all systems.
+  On systems like android it always tried to process as seekable inputs.
+  [bug introduced in coreutils-8.24]
+
+  timeout will again notice its managed command exiting, even when
+  invoked with blocked CHLD signal, or in a narrow window where
+  this CHLD signal from the exiting child was missed.  In each case
+  timeout would have then waited for the time limit to expire.
+  [bug introduced in coreutils-8.27]
+
+** New features
+
+  timeout now supports the --verbose option to diagnose forced termination.
+
+** Improvements
+
+  dd now supports iflag=direct with arbitrary sized files on all file systems.
+
+  tail --bytes=NUM will efficiently seek to the end of block devices,
+  rather than reading from the start.
+
+  Utilities which do not support long options (other than the default --help
+  and --version), e.g. cksum and sleep, now use more consistent error diagnostic
+  for unknown long options.
+
+** Build-related
+
+  Default man pages are now distributed which are used if perl is
+  not available on the build system, or when cross compiling.
+
+
+* Noteworthy changes in release 8.28 (2017-09-01) [stable]
+
+** Bug fixes
+
+  cp and mv now merely warn about any failure to preserve symlink ownership.
+  Before, cp (without -p) would exit with a failure status, and a cross-device
+  mv would leave such symlinks behind in the source file system.
+  [the bug dates back to the initial implementation]
+
+  When creating numbered backups, cp, install, ln, and mv now avoid
+  races that could lose backup data in unlikely circumstances.  Since
+  the fix relies on the renameat2 system call of Linux kernel 3.15 and
+  later, the races are still present on other platforms.
+  [the bug dates back to the initial implementation]
+
+  cp, install, ln, and mv no longer lose data when asked to copy a
+  backup file to its original via a differently-spelled file name.
+  E.g., 'rm -f a a~; : > a; echo data > a~; cp --backup=simple a~ ./a'
+  now fails instead of losing the data.
+  [the bug dates back to the initial implementation]
+
+  cp, install, ln, and mv now ignore nonsensical backup suffixes.
+  For example, --suffix='/' and --suffix='' are now no-ops.
+  [the bug dates back to the initial implementation]
+
   date and touch no longer overwrite the heap with large
   user specified TZ values (CVE-2017-7476).
   [bug introduced in coreutils-8.27]
@@ -13,8 +287,24 @@ GNU coreutils NEWS                                    -*- outline -*-
   [bug introduced in coreutils-8.24]
 
   df no longer interacts with excluded file system types, so for example
-  specifying -x nfs will no longer hang with problematic nfs mounts.
+  specifying -x nfs no longer hangs with problematic nfs mounts.
   [bug introduced in coreutils-8.21]
+
+  df no longer interacts with dummy file system types, so for example
+  no longer hangs with problematic nfs mounted via system.automount(5).
+  [bug introduced in coreutils-8.21]
+
+  `groups inva:lid root` no longer exits immediately upon failure.
+  Now, it prints a diagnostic or a line to stdout for each argument.
+  [bug introduced in the bourne-shell-to-C rewrite for coreutils-6.11]
+
+  kill now converts from number to signal name correctly on AIX.
+  Previously it would have always returned the 'EXIT' name.
+  [bug introduced in fileutils-4.1.9]
+
+  ls now quotes symlink targets consistently.  Previously it may not
+  have quoted the target name if the link name itself didn't need quoting.
+  [bug introduced in coreutils-8.26]
 
   split no longer exits when invocations of a --filter return EPIPE.
   [bug introduced in coreutils-8.26]
@@ -26,14 +316,56 @@ GNU coreutils NEWS                                    -*- outline -*-
   tail -F 'dir/file' is now monitored even when 'dir' is replaced.
   [bug introduced with inotify support added in coreutils-7.5]
 
+  tail -f with --pid=PID now processes all inotify events.
+  Previously events may have been ignored completely upon PID death,
+  or ignored until future events on the monitored files.
+  [bug introduced with inotify support added in coreutils-7.5]
+
+  tail -f /dev/tty is now supported by not using inotify when any
+  non regular files are specified, as inotify is ineffective with these.
+  [bug introduced with inotify support added in coreutils-7.5]
+
+  uptime no longer outputs the AM/PM component of the current time,
+  as that's inconsistent with the 24 hour time format used.
+  [bug introduced in coreutils-7.0]
+
+  expr now returns number of characters matched (instead of incorrect
+  number of bytes matched) with 'match'/':' operators on multibyte strings.
+
 ** New features
 
   expand and unexpand now support specifying an offset for tab stops
   by prefixing the last specified number like --tabs=1,+8 which is
   useful for visualizing diff output for example.
 
+  ls supports a new --hyperlink[=when] option to output file://
+  format links to files, supported by some terminals.
+
   split supports a new --hex-suffixes[=from] option to create files with
   lower case hexadecimal suffixes, similar to the --numeric-suffixes option.
+
+  env now has a --chdir (-C) option to change the working directory before
+  executing the subsidiary program.
+
+  expr supports multibyte strings for all string operations.
+
+** Changes in behavior
+
+  tail -f now exits immediately if the output is piped and the reader of
+  the pipe terminates.  That allows `tail -f file | grep -q foo` to return
+  responsively, but does make `tail -f file | :` exit immediately without
+  waiting for data.  Instead one should now `tail -f file | grep -q .`
+
+** Improvements
+
+  mv --verbose now distinguishes rename and copy operations.
+
+  stat -f -c %l, used to output the max file name length on a file system,
+  is now supported on FreeBSD and OpenBSD.
+
+  tail -f no longer erroneously warns about being ineffective
+  when following a single tty, as the simple blocking loop used
+  is effective in this case.
 
 
 * Noteworthy changes in release 8.27 (2017-03-08) [stable]
@@ -1612,7 +1944,9 @@ GNU coreutils NEWS                                    -*- outline -*-
 
 ** New features
 
-  split accepts the --number option to generate a specific number of files.
+  split accepts the --number/-n option to generate a specific number of
+  files, as well as the --elide-empty-files/-e and --unbuffered/-u
+  options to fine-tune the resulting output.
 
 
 * Noteworthy changes in release 8.7 (2010-11-13) [stable]
@@ -3507,7 +3841,7 @@ GNU coreutils NEWS                                    -*- outline -*-
   These changes are in response to decisions taken in the January 2005
   Austin Group standardization meeting.  For more details, please see
   "Utility Syntax Guidelines" in the Minutes of the January 2005
-  Meeting <http://www.opengroup.org/austin/docs/austin_239.html>.
+  Meeting <https://www.opengroup.org/austin/docs/austin_239.html>.
 
 ** Binary input and output are now implemented more consistently.
   These changes affect only platforms like MS-DOS that distinguish
@@ -3585,9 +3919,9 @@ GNU coreutils NEWS                                    -*- outline -*-
 
     The new -P option checks whether a file name component has leading "-",
     as suggested in interpretation "Austin-039:XCU:pathchk:pathchk -p"
-    <http://www.opengroup.org/austin/interps/doc.tpl?gdid=6232>.
+    <https://collaboration.opengroup.org/austin/interps/documents.php?action=show&gdid=6232>.
     It also rejects the empty name even if the current host accepts it; see
-    <http://www.opengroup.org/austin/interps/doc.tpl?gdid=6233>.
+    <https://collaboration.opengroup.org/austin/interps/documents.php?action=show&gdid=6233>.
 
     The --portability option is now equivalent to -p -P.
 
@@ -4718,7 +5052,7 @@ packages, see ./old/*/NEWS.
 
 ========================================================================
 
-Copyright (C) 2001-2017 Free Software Foundation, Inc.
+Copyright (C) 2001-2019 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or

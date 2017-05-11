@@ -1,5 +1,5 @@
 /* realpath - print the resolved path
-   Copyright (C) 2011-2017 Free Software Foundation, Inc.
+   Copyright (C) 2011-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Pádraig Brady.  */
 
@@ -81,8 +81,8 @@ all but the last component must exist\n\
   -L, --logical                resolve '..' components before symlinks\n\
   -P, --physical               resolve symlinks as encountered (default)\n\
   -q, --quiet                  suppress most error messages\n\
-      --relative-to=FILE       print the resolved path relative to FILE\n\
-      --relative-base=FILE     print absolute paths unless paths below FILE\n\
+      --relative-to=DIR        print the resolved path relative to DIR\n\
+      --relative-base=DIR      print absolute paths unless paths below DIR\n\
   -s, --strip, --no-symlinks   don't expand symlinks\n\
   -z, --zero                   end each output line with NUL, not newline\n\
 \n\

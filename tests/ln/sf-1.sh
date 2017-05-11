@@ -1,7 +1,7 @@
 #!/bin/sh
 # Test "ln -sf".
 
-# Copyright (C) 1997-2017 Free Software Foundation, Inc.
+# Copyright (C) 1997-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ ln
@@ -33,9 +33,12 @@ esac
 
 # Ensure we replace symlinks that don't or can't link to an existing target.
 # coreutils-8.22 would fail to replace {ENOTDIR,ELOOP,ENAMETOOLONG}_link below.
-name_max_plus1=$(expr $(stat -f -c %l .) + 1)
-test $name_max_plus1 -gt 1 || skip_ 'Error determining NAME_MAX'
-long_name=$(printf '%0*d' $name_max_plus1 0)
+# We apply a limit since AIX returns 2^32-1 which would trigger resource issues.
+name_max=$(stat -f -c %l .) && test "$name_max" -lt $((1024*1024)) ||
+  name_max=1 # skip this portion of the test
+name_max_plus1=$(expr $name_max + 1)
+long_name=$(printf '%*s' $name_max_plus1 | tr ' ' '0')
+
 for f in '' f; do
   ln -s$f missing ENOENT_link || fail=1
   ln -s$f a/b ENOTDIR_link || fail=1

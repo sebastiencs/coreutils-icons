@@ -1,7 +1,7 @@
 #!/bin/sh
 # Exercise the -x option.
 
-# Copyright (C) 2007-2017 Free Software Foundation, Inc.
+# Copyright (C) 2007-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ ls
@@ -27,7 +27,7 @@ touch subdir/a || framework_failure_
 # Coreutils 6.8 and 6.9 would output this in the wrong order.
 ls -x subdir > out || fail=1
 ls -rx subdir >> out || fail=1
-cat <<\EOF > exp || fail=1
+cat <<\EOF > exp || framework_failure_
 a  b
 b  a
 EOF

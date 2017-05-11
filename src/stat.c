@@ -1,5 +1,5 @@
 /* stat.c -- display file or file system status
-   Copyright (C) 2001-2017 Free Software Foundation, Inc.
+   Copyright (C) 2001-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
    Written by Michael Meskes.  */
 
@@ -92,6 +92,8 @@
 # define HAVE_STRUCT_STATXFS_F_TYPE HAVE_STRUCT_STATFS_F_TYPE
 # if HAVE_STRUCT_STATFS_F_NAMELEN
 #  define SB_F_NAMEMAX(S) ((S)->f_namelen)
+# elif HAVE_STRUCT_STATFS_F_NAMEMAX
+#  define SB_F_NAMEMAX(S) ((S)->f_namemax)
 # endif
 # define STATFS statfs
 # if HAVE_OS_H /* BeOS */
@@ -139,8 +141,9 @@ statfs (char const *filename, struct fs_info *buf)
 #ifdef SB_F_NAMEMAX
 # define OUT_NAMEMAX out_uint
 #else
-/* NetBSD 1.5.2 has neither f_namemax nor f_namelen.  */
-# define SB_F_NAMEMAX(S) "*"
+/* Depending on whether statvfs or statfs is used,
+   neither f_namemax or f_namelen may be available.  */
+# define SB_F_NAMEMAX(S) "?"
 # define OUT_NAMEMAX out_string
 #endif
 
@@ -174,6 +177,13 @@ static char const digits[] = "0123456789";
    behavior elsewhere and because it is incompatible with
    out_epoch_sec.  */
 static char const printf_flags[] = "'-+ #0I";
+
+/* Formats for the --terse option.  */
+static char const fmt_terse_fs[] = "%n %i %l %t %s %S %b %f %a %c %d\n";
+static char const fmt_terse_regular[] = "%n %s %b %f %u %g %D %i %h %t %T"
+                                        " %X %Y %Z %W %o\n";
+static char const fmt_terse_selinux[] = "%n %s %b %f %u %g %D %i %h %t %T"
+                                        " %X %Y %Z %W %o %C\n";
 
 #define PROGRAM_NAME "stat"
 
@@ -225,7 +235,7 @@ human_fstype (STRUCT_STATVFS const *statfsbuf)
 #else
   switch (statfsbuf->f_type)
     {
-# if defined __linux__
+# if defined __linux__ || defined __ANDROID__
 
       /* Compare with what's in libc:
          f=/a/libc/sysdeps/unix/sysv/linux/linux_fsinfo.h
@@ -247,6 +257,8 @@ human_fstype (STRUCT_STATVFS const *statfsbuf)
          a comment.  The S_MAGIC_... name and constant are automatically
          combined to produce the #define directives in fs.h.  */
 
+    case S_MAGIC_AAFS: /* 0x5A3C69F0 local */
+      return "aafs";
     case S_MAGIC_ACFS: /* 0x61636673 remote */
       return "acfs";
     case S_MAGIC_ADFS: /* 0xADF5 local */
@@ -312,6 +324,8 @@ human_fstype (STRUCT_STATVFS const *statfsbuf)
       return "efivarfs";
     case S_MAGIC_EFS: /* 0x00414A53 local */
       return "efs";
+    case S_MAGIC_EXFS: /* 0x45584653 local */
+      return "exfs";
     case S_MAGIC_EXOFS: /* 0x5DF5 local */
       return "exofs";
     case S_MAGIC_EXT: /* 0x137D local */
@@ -436,6 +450,8 @@ human_fstype (STRUCT_STATVFS const *statfsbuf)
       return "romfs";
     case S_MAGIC_RPC_PIPEFS: /* 0x67596969 local */
       return "rpc_pipefs";
+    case S_MAGIC_SDCARDFS: /* 0x5DCA2DF5 local */
+      return "sdcardfs";
     case S_MAGIC_SECURITYFS: /* 0x73636673 local */
       return "securityfs";
     case S_MAGIC_SELINUX: /* 0xF97CFF8C local */
@@ -578,12 +594,10 @@ human_access (struct stat const *statbuf)
 static char * ATTRIBUTE_WARN_UNUSED_RESULT
 human_time (struct timespec t)
 {
-  /* STR must be at least this big, either because localtime_rz fails,
-     or because the time zone is truly outlandish so that %z expands
-     to a long string.  */
-  enum { intmax_bufsize = INT_BUFSIZE_BOUND (intmax_t) };
-
-  static char str[intmax_bufsize
+  /* STR must be at least INT_BUFSIZE_BOUND (intmax_t) big, either
+     because localtime_rz fails, or because the time zone is truly
+     outlandish so that %z expands to a long string.  */
+  static char str[INT_BUFSIZE_BOUND (intmax_t)
                   + INT_STRLEN_BOUND (int) /* YYYY */
                   + 1 /* because YYYY might equal INT_MAX + 1900 */
                   + sizeof "-MM-DD HH:MM:SS.NNNNNNNNN +"];
@@ -820,8 +834,7 @@ print_statfs (char *pformat, size_t prefix_len, unsigned int m,
            with glibc's statvfs implementation.  */
         uintmax_t fsid = 0;
         int words = sizeof statfsbuf->f_fsid / sizeof *p;
-        int i;
-        for (i = 0; i < words && i * sizeof *p < sizeof fsid; i++)
+        for (int i = 0; i < words && i * sizeof *p < sizeof fsid; i++)
           {
             uintmax_t u = p[words - 1 - i];
             fsid |= u << (i * CHAR_BIT * sizeof *p);
@@ -992,6 +1005,25 @@ get_birthtime (int fd, char const *filename, struct stat const *st)
               ts.tv_nsec = val[1];
             }
           nvlist_free (response);
+        }
+    }
+#endif
+
+#if HAVE_STATX && defined STATX_BTIME
+  if (ts.tv_nsec < 0)
+    {
+      struct statx stx;
+      if ((fd < 0
+           ? statx (AT_FDCWD, filename,
+                    follow_links ? 0 : AT_SYMLINK_NOFOLLOW,
+                    STATX_BTIME, &stx)
+           : statx (fd, "", AT_EMPTY_PATH, STATX_BTIME, &stx)) == 0)
+        {
+          if ((stx.stx_mask & STATX_BTIME) && stx.stx_btime.tv_sec != 0)
+            {
+              ts.tv_sec = stx.stx_btime.tv_sec;
+              ts.tv_nsec = stx.stx_btime.tv_nsec;
+            }
         }
     }
 #endif
@@ -1252,7 +1284,7 @@ print_it (char const *format, int fd, char const *filename,
               {
               case '\0':
                 --b;
-                /* fall through */
+                FALLTHROUGH;
               case '%':
                 if (0 < len)
                   {
@@ -1395,7 +1427,7 @@ default_format (bool fs, bool terse, bool device)
   if (fs)
     {
       if (terse)
-        format = xstrdup ("%n %i %l %t %s %S %b %f %a %c %d\n");
+        format = xstrdup (fmt_terse_fs);
       else
         {
           /* TRANSLATORS: This string uses format specifiers from
@@ -1412,11 +1444,9 @@ default_format (bool fs, bool terse, bool device)
       if (terse)
         {
           if (0 < is_selinux_enabled ())
-            format = xstrdup ("%n %s %b %f %u %g %D %i %h %t %T"
-                              " %X %Y %Z %W %o %C\n");
+            format = xstrdup (fmt_terse_selinux);
           else
-            format = xstrdup ("%n %s %b %f %u %g %D %i %h %t %T"
-                              " %X %Y %Z %W %o\n");
+            format = xstrdup (fmt_terse_regular);
         }
       else
         {
@@ -1567,6 +1597,23 @@ Valid format sequences for file systems:\n\
   %t   file system type in hex\n\
   %T   file system type in human readable form\n\
 "), stdout);
+
+      printf (_("\n\
+--terse is equivalent to the following FORMAT:\n\
+    %s\
+"),
+#if HAVE_SELINUX_SELINUX_H
+              fmt_terse_selinux
+#else
+              fmt_terse_regular
+#endif
+              );
+
+        printf (_("\
+--terse --file-system is equivalent to the following FORMAT:\n\
+    %s\
+"), fmt_terse_fs);
+
       printf (USAGE_BUILTIN_WARNING, PROGRAM_NAME);
       emit_ancillary_info (PROGRAM_NAME);
     }
@@ -1577,7 +1624,6 @@ int
 main (int argc, char *argv[])
 {
   int c;
-  int i;
   bool fs = false;
   bool terse = false;
   char *format = NULL;
@@ -1651,7 +1697,7 @@ main (int argc, char *argv[])
       format2 = default_format (fs, terse, /* device= */ true);
     }
 
-  for (i = optind; i < argc; i++)
+  for (int i = optind; i < argc; i++)
     ok &= (fs
            ? do_statfs (argv[i], format)
            : do_stat (argv[i], format, format2));

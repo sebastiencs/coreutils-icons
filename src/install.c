@@ -1,5 +1,5 @@
 /* install - copy files and set attributes
-   Copyright (C) 1989-2017 Free Software Foundation, Inc.
+   Copyright (C) 1989-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by David MacKenzie <djm@gnu.ai.mit.edu> */
 
@@ -796,6 +796,7 @@ main (int argc, char **argv)
   int exit_status = EXIT_SUCCESS;
   const char *specified_mode = NULL;
   bool make_backups = false;
+  char const *backup_suffix = NULL;
   char *version_control_string = NULL;
   bool mkdir_and_install = false;
   struct cp_options x;
@@ -873,7 +874,7 @@ main (int argc, char **argv)
           break;
         case 'S':
           make_backups = true;
-          simple_backup_suffix = optarg;
+          backup_suffix = optarg;
           break;
         case 't':
           if (target_directory)
@@ -949,6 +950,7 @@ main (int argc, char **argv)
                    ? xget_version (_("backup type"),
                                    version_control_string)
                    : no_backups);
+  set_simple_backup_suffix (backup_suffix);
 
   if (x.preserve_security_context && (x.set_security_context || scontext))
     die (EXIT_FAILURE, 0,

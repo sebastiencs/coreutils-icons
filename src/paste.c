@@ -1,5 +1,5 @@
 /* paste - merge lines of files
-   Copyright (C) 1997-2017 Free Software Foundation, Inc.
+   Copyright (C) 1997-2019 Free Software Foundation, Inc.
    Copyright (C) 1984 David M. Ihnat
 
    This program is free software: you can redistribute it and/or modify
@@ -13,7 +13,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by David Ihnat.  */
 
@@ -231,9 +231,8 @@ paste_parallel (size_t nfiles, char **fnamptr)
       bool somedone = false;
       char const *delimptr = delims;
       size_t delims_saved = 0;	/* Number of delims saved in 'delbuf'. */
-      size_t i;
 
-      for (i = 0; i < nfiles && files_open; i++)
+      for (size_t i = 0; i < nfiles && files_open; i++)
         {
           int chr IF_LINT ( = 0);	/* Input character. */
           int err IF_LINT ( = 0);	/* Input errno value.  */

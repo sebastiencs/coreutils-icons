@@ -1,7 +1,7 @@
 # -*- autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-# Copyright (C) 1991-2017 Free Software Foundation, Inc.
+# Copyright (C) 1991-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 dnl Written by Jim Meyering.
 
@@ -23,9 +23,12 @@ AC_PREREQ([2.69])
 # Make inter-release version strings look like, e.g., v6.9-219-g58ddd, which
 # indicates that it is built from the 219th delta (in _some_ repository)
 # following the v6.9 tag, and that 58ddd is a prefix of the commit SHA1.
+# The explicit URL can be removed when autoconf > 2.69 is released.
 AC_INIT([GNU coreutils],
         m4_esyscmd([build-aux/git-version-gen .tarball-version]),
-        [bug-coreutils@gnu.org])
+        [bug-coreutils@gnu.org],
+        [coreutils],
+        [https://www.gnu.org/software/coreutils/])
 
 AC_CONFIG_SRCDIR([src/ls.c])
 
@@ -127,12 +130,13 @@ if test "$gl_gcc_warnings" = yes; then
   nw="$nw -Wredundant-decls"        # openat.h declares e.g., mkdirat
   nw="$nw -Wlogical-op"             # Too many warnings until GCC 4.8.0
   nw="$nw -Wformat-nonliteral"      # who.c and pinky.c strftime uses
-  nw="$nw -Wvla"                    # warnings in gettext.h
   nw="$nw -Wnested-externs"         # use of XARGMATCH/verify_function__
   nw="$nw -Wswitch-enum"            # Too many warnings for now
   nw="$nw -Wswitch-default"         # Too many warnings for now
   nw="$nw -Wstack-protector"        # not worth working around
   nw="$nw -Wtype-limits"            # False alarms for portable code
+  nw="$nw -Wformat-overflow=2"      # False alarms due to GCC bug 80776
+  nw="$nw -Wformat-truncation=2"    # False alarm in ls.c, probably related
   # things I might fix soon:
   nw="$nw -Wfloat-equal"            # sort.c, seq.c
   nw="$nw -Wmissing-format-attribute" # copy.c
@@ -193,6 +197,8 @@ if test "$gl_gcc_warnings" = yes; then
   # We use a slightly smaller set of warning options for lib/.
   # Remove the following and save the result in GNULIB_WARN_CFLAGS.
   nw=
+  nw="$nw -Wduplicated-branches"    # Too many false alarms
+  nw="$nw -Wformat-truncation=2"
   nw="$nw -Wstrict-overflow"
   nw="$nw -Wuninitialized"
   nw="$nw -Wunused-macros"
@@ -310,6 +316,9 @@ if test $ac_cv_func_getattrat = yes; then
   LIB_NVPAIR=-lnvpair
   AC_SUBST([LIB_NVPAIR])
 fi
+
+# glibc >= 2.28 and linux kernel >= 4.11
+AC_CHECK_FUNCS([statx])
 
 # SCO-ODT-3.0 is reported to need -los to link programs using initgroups
 AC_CHECK_FUNCS([initgroups])
@@ -495,6 +504,18 @@ if test "$stdbuf_supported" = "yes" && test -z "$EXEEXT"; then
 fi
 CFLAGS=$ac_save_CFLAGS
 LDFLAGS=$ac_save_LDFLAGS
+
+# Detect when using xlc to determine whether to use -qinclude=
+AC_CACHE_CHECK([whether the system supports xlc include], [utils_cv_xlc],
+  [AC_COMPILE_IFELSE(
+     [AC_LANG_PROGRAM([[
+          #ifndef __xlc__
+            #error "not xlc"
+          #endif
+        ]])],
+     [utils_cv_xlc=yes],
+     [utils_cv_xlc=no])])
+AM_CONDITIONAL([USE_XLC_INCLUDE], [test "$utils_cv_xlc" = yes])
 
 ############################################################################
 

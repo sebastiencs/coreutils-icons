@@ -1,5 +1,5 @@
 /* cp.c  -- file copying (main routines)
-   Copyright (C) 1989-2017 Free Software Foundation, Inc.
+   Copyright (C) 1989-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
    Written by Torbjorn Granlund, David MacKenzie, and Jim Meyering. */
 
@@ -39,16 +39,6 @@
 #if ! HAVE_LCHOWN
 # define lchown(name, uid, gid) chown (name, uid, gid)
 #endif
-
-#define ASSIGN_BASENAME_STRDUPA(Dest, File_name)	\
-  do							\
-    {							\
-      char *tmp_abns_;					\
-      ASSIGN_STRDUPA (tmp_abns_, (File_name));		\
-      Dest = last_component (tmp_abns_);		\
-      strip_trailing_slashes (Dest);			\
-    }							\
-  while (0)
 
 /* The official name of this program (e.g., no 'g' prefix).  */
 #define PROGRAM_NAME "cp"
@@ -106,11 +96,11 @@ ARGMATCH_VERIFY (sparse_type_string, sparse_type);
 
 static char const *const reflink_type_string[] =
 {
-  "auto", "always", NULL
+  "auto", "always", "never", NULL
 };
 static enum Reflink_type const reflink_type[] =
 {
-  REFLINK_AUTO, REFLINK_ALWAYS
+  REFLINK_AUTO, REFLINK_ALWAYS, REFLINK_NEVER
 };
 ARGMATCH_VERIFY (reflink_type_string, reflink_type);
 
@@ -245,10 +235,13 @@ corresponding DEST file is made sparse as well.  That is the behavior\n\
 selected by --sparse=auto.  Specify --sparse=always to create a sparse DEST\n\
 file whenever the SOURCE file contains a long enough sequence of zero bytes.\n\
 Use --sparse=never to inhibit creation of sparse files.\n\
+"), stdout);
+      fputs (_("\
 \n\
 When --reflink[=always] is specified, perform a lightweight copy, where the\n\
 data blocks are copied only when modified.  If this is not possible the copy\n\
 fails, or if --reflink=auto is specified, fall back to a standard copy.\n\
+Use --reflink=never to ensure a standard copy is performed.\n\
 "), stdout);
       emit_backup_suffix_note ();
       fputs (_("\
@@ -569,23 +562,27 @@ make_dir_parents_private (char const *const_dir, size_t src_offset,
 
 /* FILE is the last operand of this command.
    Return true if FILE is a directory.
-   But report an error and exit if there is a problem accessing FILE,
-   or if FILE does not exist but would have to refer to an existing
-   directory if it referred to anything at all.
 
-   If the file exists, store the file's status into *ST.
+   Without -f, report an error and exit if FILE exists
+   but can't be accessed.
+
+   If the file exists and is accessible store the file's status into *ST.
    Otherwise, set *NEW_DST.  */
 
 static bool
-target_directory_operand (char const *file, struct stat *st, bool *new_dst)
+target_directory_operand (char const *file, struct stat *st,
+                          bool *new_dst, bool forcing)
 {
   int err = (stat (file, st) == 0 ? 0 : errno);
   bool is_a_dir = !err && S_ISDIR (st->st_mode);
   if (err)
     {
-      if (err != ENOENT)
+      if (err == ENOENT)
+        *new_dst = true;
+      else if (forcing)
+        st->st_mode = 0;  /* clear so we don't enter --backup case below.  */
+      else
         die (EXIT_FAILURE, err, _("failed to access %s"), quoteaf (file));
-      *new_dst = true;
     }
   return is_a_dir;
 }
@@ -600,6 +597,8 @@ do_copy (int n_files, char **file, const char *target_directory,
   struct stat sb;
   bool new_dst = false;
   bool ok = true;
+  bool forcing = x->unlink_dest_before_opening
+                 || x->unlink_dest_after_failed_open;
 
   if (n_files <= !target_directory)
     {
@@ -623,12 +622,14 @@ do_copy (int n_files, char **file, const char *target_directory,
           usage (EXIT_FAILURE);
         }
       /* Update NEW_DST and SB, which may be checked below.  */
-      ignore_value (target_directory_operand (file[n_files -1], &sb, &new_dst));
+      ignore_value (target_directory_operand (file[n_files -1], &sb, &new_dst,
+                                              forcing));
     }
   else if (!target_directory)
     {
       if (2 <= n_files
-          && target_directory_operand (file[n_files - 1], &sb, &new_dst))
+          && target_directory_operand (file[n_files - 1], &sb, &new_dst,
+                                       forcing))
         target_directory = file[--n_files];
       else if (2 < n_files)
         die (EXIT_FAILURE, 0, _("target %s is not a directory"),
@@ -640,7 +641,6 @@ do_copy (int n_files, char **file, const char *target_directory,
       /* cp file1...filen edir
          Copy the files 'file1' through 'filen'
          to the existing directory 'edir'. */
-      int i;
 
       /* Initialize these hash tables only if we'll need them.
          The problems they're used to detect can arise only if
@@ -651,7 +651,7 @@ do_copy (int n_files, char **file, const char *target_directory,
           src_info_init (x);
         }
 
-      for (i = 0; i < n_files; i++)
+      for (int i = 0; i < n_files; i++)
         {
           char *dst_name;
           bool parent_exists = true;  /* True if dir_name (dst_name) exists. */
@@ -694,8 +694,8 @@ do_copy (int n_files, char **file, const char *target_directory,
             {
               char *arg_base;
               /* Append the last component of 'arg' to 'target_directory'.  */
-
-              ASSIGN_BASENAME_STRDUPA (arg_base, arg);
+              ASSIGN_STRDUPA (arg_base, last_component (arg));
+              strip_trailing_slashes (arg_base);
               /* For 'cp -R source/.. dest', don't copy into 'dest/..'. */
               dst_name = (STREQ (arg_base, "..")
                           ? xstrdup (target_directory)
@@ -759,7 +759,7 @@ do_copy (int n_files, char **file, const char *target_directory,
         {
           static struct cp_options x_tmp;
 
-          new_dest = find_backup_file_name (dest, x->backup_type);
+          new_dest = find_backup_file_name (AT_FDCWD, dest, x->backup_type);
           /* Set x->backup_type to 'no_backups' so that the normal backup
              mechanism is not used when performing the actual copy.
              backup_type must be set to 'no_backups' only *after* the above
@@ -931,6 +931,7 @@ main (int argc, char **argv)
   int c;
   bool ok;
   bool make_backups = false;
+  char const *backup_suffix = NULL;
   char *version_control_string = NULL;
   struct cp_options x;
   bool copy_contents = false;
@@ -1045,7 +1046,7 @@ main (int argc, char **argv)
               x.require_preserve = true;
               break;
             }
-          /* fall through */
+          FALLTHROUGH;
 
         case 'p':
           x.preserve_ownership = true;
@@ -1127,7 +1128,7 @@ main (int argc, char **argv)
 
         case 'S':
           make_backups = true;
-          simple_backup_suffix = optarg;
+          backup_suffix = optarg;
           break;
 
         case_GETOPT_HELP_CHAR;
@@ -1144,6 +1145,9 @@ main (int argc, char **argv)
       error (0, 0, _("cannot make both hard and symbolic links"));
       usage (EXIT_FAILURE);
     }
+
+  if (x.interactive == I_ALWAYS_NO)
+    x.update = false;
 
   if (make_backups && x.interactive == I_ALWAYS_NO)
     {
@@ -1162,6 +1166,7 @@ main (int argc, char **argv)
                    ? xget_version (_("backup type"),
                                    version_control_string)
                    : no_backups);
+  set_simple_backup_suffix (backup_suffix);
 
   if (x.dereference == DEREF_UNDEFINED)
     {

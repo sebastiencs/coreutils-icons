@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2008-2017 Free Software Foundation, Inc.
+# Copyright (C) 2008-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use strict;
 
@@ -40,6 +40,12 @@ my @Tests =
                               {OUT=>".xx \"\" \"\" \"foo\" \"\"\n"}],
 ["format-t", '--format=tex',  {IN=>"foo\n"},
                               {OUT=>"\\xx {}{}{foo}{}{}\n"}],
+
+# with coreutils-8.28 and earlier, the -S option would infloop with
+# matches of zero-length.
+["S-infloop", '-S \^', {IN=>"a\n"}, {EXIT=>1},
+                       {ERR_SUBST=>'s/^.*reg.*ex.*length zero.*$/regexlzero/'},
+                       {ERR=>"regexlzero\n"}],
 );
 
 @Tests = triple_test \@Tests;

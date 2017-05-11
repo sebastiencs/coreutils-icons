@@ -1,5 +1,5 @@
 /* split.c -- split a file into pieces.
-   Copyright (C) 1988-2017 Free Software Foundation, Inc.
+   Copyright (C) 1988-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* By tege@sics.se, with rms.
 
@@ -470,7 +470,8 @@ create (const char *name)
       if (SAME_INODE (in_stat_buf, out_stat_buf))
         die (EXIT_FAILURE, 0, _("%s would overwrite input; aborting"),
              quoteaf (name));
-      if (ftruncate (fd, 0) != 0)
+      if (ftruncate (fd, 0) != 0
+          && (S_ISREG (out_stat_buf.st_mode) || S_TYPEISSHM (&out_stat_buf)))
         die (EXIT_FAILURE, errno, _("%s: error truncating"), quotef (name));
 
       return fd;

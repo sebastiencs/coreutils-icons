@@ -1,5 +1,5 @@
 /* join - join lines of two files on a common field
-   Copyright (C) 1991-2017 Free Software Foundation, Inc.
+   Copyright (C) 1991-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
    Written by Mike Haertel, mike@gnu.ai.mit.edu.  */
 
@@ -480,9 +480,7 @@ get_line (FILE *fp, struct line **linep, int which)
 static void
 free_spareline (void)
 {
-  size_t i;
-
-  for (i = 0; i < ARRAY_CARDINALITY (spareline); i++)
+  for (size_t i = 0; i < ARRAY_CARDINALITY (spareline); i++)
     {
       if (spareline[i])
         {
@@ -507,9 +505,8 @@ getseq (FILE *fp, struct seq *seq, int whichfile)
 {
   if (seq->count == seq->alloc)
     {
-      size_t i;
       seq->lines = X2NREALLOC (seq->lines, &seq->alloc);
-      for (i = seq->count; i < seq->alloc; i++)
+      for (size_t i = seq->count; i < seq->alloc; i++)
         seq->lines[i] = NULL;
     }
 
@@ -535,8 +532,7 @@ advance_seq (FILE *fp, struct seq *seq, bool first, int whichfile)
 static void
 delseq (struct seq *seq)
 {
-  size_t i;
-  for (i = 0; i < seq->alloc; i++)
+  for (size_t i = 0; i < seq->alloc; i++)
     {
       freeline (seq->lines[i]);
       free (seq->lines[i]);
@@ -693,7 +689,6 @@ join (FILE *fp1, FILE *fp2)
 
   while (seq1.count && seq2.count)
     {
-      size_t i;
       diff = keycmp (seq1.lines[0], seq2.lines[0],
                      join_field_1, join_field_2);
       if (diff < 0)
@@ -741,7 +736,7 @@ join (FILE *fp1, FILE *fp2)
 
       if (print_pairables)
         {
-          for (i = 0; i < seq1.count - 1; ++i)
+          for (size_t i = 0; i < seq1.count - 1; ++i)
             {
               size_t j;
               for (j = 0; j < seq2.count - 1; ++j)
@@ -1041,7 +1036,7 @@ main (int argc, char **argv)
         {
         case 'v':
             print_pairables = false;
-            /* Fall through.  */
+            FALLTHROUGH;
 
         case 'a':
           {
@@ -1198,7 +1193,7 @@ main (int argc, char **argv)
     die (EXIT_FAILURE, errno, "%s", quotef (g_names[1]));
 
   if (issued_disorder_warning[0] || issued_disorder_warning[1])
-    return EXIT_FAILURE;
+    die (EXIT_FAILURE, 0, _("input is not in sorted order"));
   else
     return EXIT_SUCCESS;
 }

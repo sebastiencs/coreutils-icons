@@ -1,7 +1,7 @@
 #!/bin/sh
 # Show that wc's new --files0-from option works.
 
-# Copyright (C) 2006-2017 Free Software Foundation, Inc.
+# Copyright (C) 2006-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ wc
@@ -45,7 +45,7 @@ nlname='1
 2'
 touch "$nlname" || framework_failure_
 printf '%s\0' "$nlname" | wc --files0-from=- > out || fail=1
-printf '%s\n' "0 0 0 '1'$'\\n''2'" > exp || framework_failure_
+printf '%s\n' "0 0 0 '1'\$'\\n''2'" > exp || framework_failure_
 compare exp out || fail=1
 
 # Ensure correct byte counts, which fails between v8.24 and v8.26 inclusive

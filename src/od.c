@@ -1,5 +1,5 @@
 /* od -- dump files in octal and other formats
-   Copyright (C) 1992-2017 Free Software Foundation, Inc.
+   Copyright (C) 1992-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Jim Meyering.  */
 
@@ -417,6 +417,7 @@ BYTES is hex with 0x or 0X prefix, and may have a multiplier suffix:\n\
   MB   1000*1000\n\
   M    1024*1024\n\
 and so on for G, T, P, E, Z, Y.\n\
+Binary prefixes can be used, too: KiB=K, MiB=M, and so on.\n\
 "), stdout);
       emit_ancillary_info (PROGRAM_NAME);
     }
@@ -484,9 +485,8 @@ PRINT_FLOATTYPE (print_long_double, long double, ldtoastr, LDBL_BUFSIZE_BOUND)
 static void
 dump_hexl_mode_trailer (size_t n_bytes, const char *block)
 {
-  size_t i;
   fputs ("  >", stdout);
-  for (i = n_bytes; i > 0; i--)
+  for (size_t i = n_bytes; i > 0; i--)
     {
       unsigned char c = *block++;
       unsigned char c2 = (isprint (c) ? c : '.');
@@ -1205,10 +1205,8 @@ write_block (uintmax_t current_offset, size_t n_bytes,
     }
   else
     {
-      size_t i;
-
       prev_pair_equal = false;
-      for (i = 0; i < n_specs; i++)
+      for (size_t i = 0; i < n_specs; i++)
         {
           int datum_width = width_bytes[spec[i].size];
           int fields_per_block = bytes_per_block / datum_width;
@@ -1318,10 +1316,9 @@ read_block (size_t n, char *block, size_t *n_bytes_in_buffer)
 static int _GL_ATTRIBUTE_PURE
 get_lcm (void)
 {
-  size_t i;
   int l_c_m = 1;
 
-  for (i = 0; i < n_specs; i++)
+  for (size_t i = 0; i < n_specs; i++)
     l_c_m = lcm (l_c_m, width_bytes[spec[i].size]);
   return l_c_m;
 }

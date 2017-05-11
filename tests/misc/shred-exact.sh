@@ -1,7 +1,7 @@
 #!/bin/sh
 # Test functionality of --exact
 
-# Copyright (C) 2000-2017 Free Software Foundation, Inc.
+# Copyright (C) 2000-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ shred
@@ -22,9 +22,9 @@ print_ver_ shred
 
 # make sure that neither --exact nor --zero gobbles a command line argument
 for opt in --exact --zero; do
-  echo a > a || fail=1
-  echo bb > b || fail=1
-  echo ccc > c || fail=1
+  echo a > a || framework_failure_
+  echo bb > b || framework_failure_
+  echo ccc > c || framework_failure_
 
   shred --remove $opt a b || fail=1
   test -f a && fail=1

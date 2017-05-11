@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # Exercise base{32,64}.
 
-# Copyright (C) 2006-2017 Free Software Foundation, Inc.
+# Copyright (C) 2006-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use strict;
 
@@ -62,6 +62,7 @@ my @Tests;
 sub gen_tests($)
 {
   my ($prog) = @_;
+  my $try_help = "Try '$prog --help' for more information.\n";
   @Tests=
     (
      ['empty', {IN=>''}, {OUT=>""}],
@@ -113,6 +114,12 @@ sub gen_tests($)
      ['b4k-1',   '--decode', {IN=>$a3k_nl[1]}, {OUT=>'a' x (3072+0)}],
      ['b4k-2',   '--decode', {IN=>$a3k_nl[2]}, {OUT=>'a' x (3072+0)}],
      ['b4k-3',   '--decode', {IN=>$a3k_nl[3]}, {OUT=>'a' x (3072+0)}],
+
+     ['ext-op1', 'a b',       {IN=>''}, {EXIT=>1},
+      {ERR => "$prog: extra operand 'b'\n" . $try_help}],
+     # Again, with more option arguments
+     ['ext-op2', '-di --wrap=40 a b',       {IN=>''}, {EXIT=>1},
+      {ERR => "$prog: extra operand 'b'\n" . $try_help}],
     );
 
   if ($prog eq "base64")

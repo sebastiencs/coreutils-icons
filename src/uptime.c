@@ -1,5 +1,5 @@
 /* GNU's uptime.
-   Copyright (C) 1992-2017 Free Software Foundation, Inc.
+   Copyright (C) 1992-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,12 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Created by hacking who.c by Kaveh Ghazi ghazi@caip.rutgers.edu.  */
 
 #include <config.h>
-#include <getopt.h>
 #include <stdio.h>
 
 #include <sys/types.h>
@@ -134,7 +133,7 @@ print_uptime (size_t n, const STRUCT_UTMP *this)
      previous versions of coreutils don't. */
   if (tmn)
     /* TRANSLATORS: This prints the current clock time. */
-    fprintftime (stdout, _(" %H:%M%P  "), tmn, 0, 0);
+    fprintftime (stdout, _(" %H:%M:%S  "), tmn, 0, 0);
   else
     printf (_(" ??:????  "));
   if (uptime == (time_t) -1)
@@ -234,10 +233,9 @@ main (int argc, char **argv)
 
   atexit (close_stdout);
 
-  parse_long_options (argc, argv, PROGRAM_NAME, PACKAGE_NAME, Version,
-                      usage, AUTHORS, (char const *) NULL);
-  if (getopt_long (argc, argv, "", NULL, NULL) != -1)
-    usage (EXIT_FAILURE);
+  parse_gnu_standard_options_only (argc, argv, PROGRAM_NAME, PACKAGE_NAME,
+                                   Version, true, usage, AUTHORS,
+                                   (char const *) NULL);
 
   switch (argc - optind)
     {

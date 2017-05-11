@@ -1,7 +1,7 @@
 #!/bin/sh
 # Test for proper detection of EPIPE with ignored SIGPIPE
 
-# Copyright (C) 2016-2017 Free Software Foundation, Inc.
+# Copyright (C) 2016-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,13 +14,11 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ seq
-
-(trap '' PIPE && yes | :) 2>&1 | grep -qF 'Broken pipe' ||
-    skip_ 'trapping SIGPIPE is not supported'
+trap_sigpipe_or_skip_
 
 # upon EPIPE with signals ignored, 'seq' should exit with an error.
 timeout 10 sh -c \
@@ -31,9 +29,7 @@ echo 1 > exp || framework_failure_
 compare exp out || fail=1
 compare exp code || fail=1
 
-# The error message must begin with "standard output:"
-# (but don't hard-code the strerror text)
-grep '^seq: standard output: ' err \
+grep '^seq: write error: ' err \
   || { warn_ "seq emitted incorrect error on EPIPE"; \
        cat err;\
        fail=1; }

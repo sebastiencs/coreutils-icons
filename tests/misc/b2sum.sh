@@ -1,7 +1,7 @@
 #!/bin/sh
 # 'b2sum' tests
 
-# Copyright (C) 2016-2017 Free Software Foundation, Inc.
+# Copyright (C) 2016-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ b2sum
@@ -45,5 +45,10 @@ done
 b2sum -l 128 check.vals > out || fail=1
 printf '%s\n' '796485dd32fe9b754ea5fd6c721271d9  check.vals' > exp
 compare exp out || fail=1
+
+# This would segfault from coreutils-8.26 to coreutils-8.28
+printf '%s\n' 'BLAKE2' 'BLAKE2b' 'BLAKE2-' 'BLAKE2(' 'BLAKE2 (' > crash.check \
+  || framework_failure_
+returns_ 1 b2sum -c crash.check || fail=1
 
 Exit $fail

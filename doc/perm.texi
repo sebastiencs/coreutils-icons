@@ -1,6 +1,6 @@
 @c File mode bits
 
-@c Copyright (C) 1994-2017 Free Software Foundation, Inc.
+@c Copyright (C) 1994-2019 Free Software Foundation, Inc.
 
 @c Permission is granted to copy, distribute and/or modify this document
 @c under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -70,38 +70,36 @@ In addition to the three sets of three permissions listed above, the
 file mode bits have three special components, which affect only
 executable files (programs) and, on most systems, directories:
 
-@enumerate
-@item
+@table @asis
+@item The @dfn{set-user-ID bit} (@dfn{setuid bit}).
 @cindex set-user-ID
 @cindex setuid
-Set the process's effective user ID to that of the file upon execution
-(called the @dfn{set-user-ID bit}, or sometimes the @dfn{setuid bit}).
+On execution, set the process's effective user ID to that of the file.
 For directories on a few systems, give files created in the directory
 the same owner as the directory, no matter who creates them, and set
 the set-user-ID bit of newly-created subdirectories.
-@item
+
+@item The @dfn{set-group-ID bit} (@dfn{setgid bit}).
 @cindex set-group-ID
 @cindex setgid
-Set the process's effective group ID to that of the file upon execution
-(called the @dfn{set-group-ID bit}, or sometimes the @dfn{setgid bit}).
+On execution, set the process's effective group ID to that of the file.
 For directories on most systems, give files created in the directory
 the same group as the directory, no matter what group the user who
 creates them is in, and set the set-group-ID bit of newly-created
 subdirectories.
-@item
+
+@item The @dfn{restricted deletion flag} or @dfn{sticky bit}.
 @cindex sticky
 @cindex swap space, saving text image in
 @cindex text image, saving in swap space
 @cindex restricted deletion flag
 Prevent unprivileged users from removing or renaming a file in a directory
-unless they own the file or the directory; this is called the
-@dfn{restricted deletion flag} for the directory, and is commonly
+unless they own the file or the directory; this is commonly
 found on world-writable directories like @file{/tmp}.
-
 For regular files on some older systems, save the program's text image on the
-swap device so it will load more quickly when run; this is called the
-@dfn{sticky bit}.
-@end enumerate
+swap device so it will load more quickly when run, so that the image
+is ``sticky''.
+@end table
 
 In addition to the file mode bits listed above, there may be file attributes
 specific to the file system, e.g., access control lists (ACLs), whether a
@@ -494,10 +492,47 @@ the file to all users.
 As an
 alternative to giving a symbolic mode, you can give an octal (base 8)
 number that represents the mode.
-This number is always interpreted in octal; you do not have to add a
-leading @samp{0}, as you do in C.  Mode @samp{0055} is the same as
-mode @samp{55}.  (However, modes of five digits or more, such as
-@samp{00055}, are sometimes special.  @xref{Directory Setuid and Setgid}.)
+
+The permissions granted to the user,
+to other users in the file's group,
+and to other users not in the file's group each require three
+bits: one bit for read, one for write, and one for execute/search permission.
+These three bits are represented as one octal digit;
+for example, if all three are present, the resulting 111 (in binary)
+is represented as the digit 7 (in octal).  The three special
+mode bits also require one bit each, and they are as a group
+represented as another octal digit.  Here is how the bits are arranged,
+starting with the highest valued bit:
+
+@example
+Value in  Corresponding
+Mode      Mode Bit
+
+          Special mode bits:
+4000      Set user ID
+2000      Set group ID
+1000      Restricted deletion flag or sticky bit
+
+          The file's owner:
+ 400      Read
+ 200      Write
+ 100      Execute/search
+
+          Other users in the file's group:
+  40      Read
+  20      Write
+  10      Execute/search
+
+          Other users not in the file's group:
+   4      Read
+   2      Write
+   1      Execute/search
+@end example
+
+For example, numeric mode @samp{4751} corresponds to symbolic mode
+@samp{u=srwx,g=rx,o=x}, and numeric mode @samp{664} corresponds to symbolic mode
+@samp{ug=rw,o=r}.  Numeric mode @samp{0} corresponds to symbolic mode
+@samp{a=}.
 
 A numeric mode is usually shorter than the corresponding symbolic
 mode, but it is limited in that normally it cannot take into account the
@@ -507,43 +542,10 @@ to this general limitation.  @xref{Directory Setuid and Setgid}.
 Also, operator numeric modes can take previous file mode bits into
 account.  @xref{Operator Numeric Modes}.
 
-The permissions granted to the user,
-to other users in the file's group,
-and to other users not in the file's group each require three
-bits, which are represented as one octal digit.  The three special
-mode bits also require one bit each, and they are as a group
-represented as another octal digit.  Here is how the bits are arranged,
-starting with the lowest valued bit:
-
-@example
-Value in  Corresponding
-Mode      Mode Bit
-
-          Other users not in the file's group:
-   1      Execute/search
-   2      Write
-   4      Read
-
-          Other users in the file's group:
-  10      Execute/search
-  20      Write
-  40      Read
-
-          The file's owner:
- 100      Execute/search
- 200      Write
- 400      Read
-
-          Special mode bits:
-1000      Restricted deletion flag or sticky bit
-2000      Set group ID on execution
-4000      Set user ID on execution
-@end example
-
-For example, numeric mode @samp{4755} corresponds to symbolic mode
-@samp{u=rwxs,go=rx}, and numeric mode @samp{664} corresponds to symbolic mode
-@samp{ug=rw,o=r}.  Numeric mode @samp{0} corresponds to symbolic mode
-@samp{a=}.
+Numeric modes are always interpreted in octal; you do not have to add a
+leading @samp{0}, as you do in C@.  Mode @samp{0055} is the same as
+mode @samp{55}.  However, modes of five digits or more, such as
+@samp{00055}, are sometimes special (@pxref{Directory Setuid and Setgid}).
 
 @node Operator Numeric Modes
 @section Operator Numeric Modes

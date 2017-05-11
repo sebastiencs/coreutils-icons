@@ -1,5 +1,5 @@
 /* operand2sig.c -- common function for parsing signal specifications
-   Copyright (C) 2008-2017 Free Software Foundation, Inc.
+   Copyright (C) 2008-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Extracted from kill.c/timeout.c by Pádraig Brady.
    FIXME: Move this to gnulib/str2sig.c */
@@ -53,8 +53,15 @@ operand2sig (char const *operand, char *signame)
       char *endp;
       long int l = (errno = 0, strtol (operand, &endp, 10));
       int i = l;
-      signum = (operand == endp || *endp || errno || i != l ? -1
-                : WIFSIGNALED (i) ? WTERMSIG (i) : i);
+      signum = (operand == endp || *endp || errno || i != l ? -1 : i);
+
+      if (signum != -1)
+        {
+          /* Note AIX uses a different bit pattern for status returned
+             from shell and wait(), so we can't use WTERMSIG etc. here.
+             Also ksh returns 0xFF + signal number.  */
+          signum &= signum >= 0xFF ? 0xFF : 0x7F;
+        }
     }
   else
     {

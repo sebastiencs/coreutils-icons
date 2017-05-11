@@ -1,5 +1,5 @@
 /* nohup -- run a command immune to hangups, with output to a non-tty
-   Copyright (C) 2003-2017 Free Software Foundation, Inc.
+   Copyright (C) 2003-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,19 +12,17 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Jim Meyering  */
 
 #include <config.h>
-#include <getopt.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <signal.h>
 
 #include "system.h"
 
-#include "cloexec.h"
 #include "error.h"
 #include "filenamecat.h"
 #include "fd-reopen.h"
@@ -100,10 +98,9 @@ main (int argc, char **argv)
   initialize_exit_failure (exit_internal_failure);
   atexit (close_stdout);
 
-  parse_long_options (argc, argv, PROGRAM_NAME, PACKAGE_NAME, Version,
-                      usage, AUTHORS, (char const *) NULL);
-  if (getopt_long (argc, argv, "+", NULL, NULL) != -1)
-    usage (exit_internal_failure);
+  parse_gnu_standard_options_only (argc, argv, PROGRAM_NAME, PACKAGE_NAME,
+                                   Version, false, usage, AUTHORS,
+                                   (char const *) NULL);
 
   if (argc <= optind)
     {
@@ -182,12 +179,8 @@ main (int argc, char **argv)
          if execve fails.  It's no big deal if this dup fails.  It might
          not change anything, and at worst, it'll lead to suppression of
          the post-failed-execve diagnostic.  */
-      saved_stderr_fd = dup (STDERR_FILENO);
-
-      if (0 <= saved_stderr_fd
-          && set_cloexec_flag (saved_stderr_fd, true) != 0)
-        error (exit_internal_failure, errno,
-               _("failed to set the copy of stderr to close on exec"));
+      saved_stderr_fd = fcntl (STDERR_FILENO, F_DUPFD_CLOEXEC,
+                               STDERR_FILENO + 1);
 
       if (!redirecting_stdout)
         error (0, 0,

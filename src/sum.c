@@ -1,5 +1,5 @@
 /* sum -- checksum and count the blocks in a file
-   Copyright (C) 1986-2017 Free Software Foundation, Inc.
+   Copyright (C) 1986-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Like BSD sum or SysV sum -r, except like SysV sum if -s option is given. */
 
@@ -181,7 +181,6 @@ sysv_sum_file (const char *file, int print_name)
 
   while (1)
     {
-      size_t i;
       size_t bytes_read = safe_read (fd, buf, sizeof buf);
 
       if (bytes_read == 0)
@@ -195,7 +194,7 @@ sysv_sum_file (const char *file, int print_name)
           return false;
         }
 
-      for (i = 0; i < bytes_read; i++)
+      for (size_t i = 0; i < bytes_read; i++)
         s += buf[i];
       total_bytes += bytes_read;
     }

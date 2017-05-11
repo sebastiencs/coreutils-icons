@@ -1,5 +1,5 @@
 /* du -- summarize disk usage
-   Copyright (C) 1988-2017 Free Software Foundation, Inc.
+   Copyright (C) 1988-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Differences from the Unix du:
    * Doesn't simply ignore the names of regular files given as arguments
@@ -613,7 +613,6 @@ process_file (FTS *fts, FTSENT *ent)
              Clear the accumulators for *all* levels between prev_level
              and the current one.  The depth may change dramatically,
              e.g., from 1 to 10.  */
-          size_t i;
 
           if (n_alloc <= level)
             {
@@ -621,7 +620,7 @@ process_file (FTS *fts, FTSENT *ent)
               n_alloc = level * 2;
             }
 
-          for (i = prev_level + 1; i <= level; i++)
+          for (size_t i = prev_level + 1; i <= level; i++)
             {
               duinfo_init (&dulvl[i].ent);
               duinfo_init (&dulvl[i].subdir);

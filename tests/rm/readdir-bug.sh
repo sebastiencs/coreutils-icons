@@ -2,7 +2,7 @@
 # Exercise the Darwin/MacOS bug worked around on 2006-09-29,
 # whereby rm would fail to remove all entries in a directory.
 
-# Copyright (C) 2006-2017 Free Software Foundation, Inc.
+# Copyright (C) 2006-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ rm
@@ -23,7 +23,7 @@ print_ver_ rm
 # Create a directory containing many files.
 # What counts is a combination of the number of files and
 # the lengths of their names.  For details, see
-# http://lists.gnu.org/archive/html/bug-coreutils/2006-09/msg00326.html
+# https://lists.gnu.org/r/bug-coreutils/2006-09/msg00326.html
 mkdir b || framework_failure_
 cd b || framework_failure_
 for i in $(seq 1 250); do

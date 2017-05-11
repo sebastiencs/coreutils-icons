@@ -1,6 +1,6 @@
 /* set-fields.h -- parse field list argument
 
-   Copyright (C) 2015-2017 Free Software Foundation, Inc.
+   Copyright (C) 2015-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,14 +13,14 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 #ifndef SET_FIELDS_H
 # define SET_FIELDS_H
 
 struct field_range_pair
   {
-    size_t lo;
-    size_t hi;
+    uintmax_t lo;
+    uintmax_t hi;
   };
 
 /* Array of `struct range_pair' holding all the finite ranges. */

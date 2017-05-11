@@ -1,7 +1,7 @@
 #!/bin/sh
 # Ensure ls output is aligned when using abbreviated months from the locale
 
-# Copyright (C) 2009-2017 Free Software Foundation, Inc.
+# Copyright (C) 2009-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,13 +14,14 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ ls
 
+mid_month="$(date +%Y-%m-15)" || framework_failure_
 for mon in $(seq -w 12); do
-    touch -d"+$mon month" $mon.ts || framework_failure_
+    touch -d"$mid_month +$mon month" $mon.ts || framework_failure_
 done
 
 
@@ -32,17 +33,20 @@ for format in "%b" "[%b" "%b]" "[%b]"; do
     # The sed usage here is slightly different from the original,
     # removing the \(.*\), to avoid triggering misbehavior in at least
     # GNU sed 4.2 (possibly miscompiled) on Mac OS X (Darwin 9.8.0).
-    n_widths=$(
+    months="$(
       LC_ALL=$LOC TIME_STYLE=+"$format" ls -lgG *.ts |
-      LC_ALL=C sed 's/.\{15\}//;s/ ..\.ts$//;s/ /./g' |
+      LC_ALL=C sed 's/.\{15\}//;s/ ..\.ts$//;s/ /./g')"
+    n_widths=$(echo "$months" |
       while read mon; do echo "$mon" | LC_ALL=$LOC wc -L; done |
       uniq | wc -l
     )
+    n_dupes=$(echo "$months" | sort | uniq -d | wc -l)
     test "$n_widths" = "1" || { fail=1; break 2; }
+    test "$n_dupes" = "0" || { fail=1; break 2; }
   done
 done
 if test "$fail" = "1"; then
-   echo "misalignment detected in $LOC locale:"
+   echo "misalignment or ambiguous output in $LOC locale:"
    LC_ALL=$LOC TIME_STYLE=+%b ls -lgG *.ts
 fi
 

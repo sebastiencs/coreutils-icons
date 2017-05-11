@@ -2,7 +2,7 @@
 # show how to skip an amount that is smaller than the nominal block size.
 # There's a more realistic example in the documentation.
 
-# Copyright (C) 2000-2017 Free Software Foundation, Inc.
+# Copyright (C) 2000-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,20 +15,20 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ dd
 
 
-echo LA:3456789abcdef > in || fail=1
+echo LA:3456789abcdef > in || framework_failure_
 (dd bs=1 skip=3 count=0 && dd bs=5) < in > out 2> /dev/null || fail=1
 case $(cat out) in
   3456789abcdef) ;;
   *) fail=1 ;;
 esac
 
-echo LA:3456789abcdef > in || fail=1
+echo LA:3456789abcdef > in || framework_failure_
 (dd bs=1 skip=3 count=0 && dd bs=5 count=2) < in > out 2> /dev/null || fail=1
 case $(cat out) in
   3456789abc) ;;

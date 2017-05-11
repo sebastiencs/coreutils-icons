@@ -2,7 +2,7 @@
 # -*- perl -*-
 # Test comm
 
-# Copyright (C) 2008-2017 Free Software Foundation, Inc.
+# Copyright (C) 2008-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 require 5.003;
 use strict;
@@ -89,7 +89,8 @@ my @Tests =
    # out-of-order input
    ['ooo', {IN=>{a=>"1\n3"}}, {IN=>{b=>"3\n2"}}, {EXIT=>1},
     {OUT => "1\n\t\t3\n\t2\n"},
-    {ERR => "$prog: file 2 is not in sorted order\n"}],
+    {ERR => "$prog: file 2 is not in sorted order\n"
+          . "$prog: input is not in sorted order\n"}],
 
    # out-of-order input, fatal
    ['ooo2', '--check-order', {IN=>{a=>"1\n3"}}, {IN=>{b=>"3\n2"}}, {EXIT=>1},
@@ -104,23 +105,27 @@ my @Tests =
    ['ooo4', {IN=>{a=>"3\n1\n0"}}, {IN=>{b=>"3\n2\n0"}}, {EXIT=>1},
     {OUT => "\t\t3\n1\n0\n\t2\n\t0\n"},
     {ERR => "$prog: file 1 is not in sorted order\n".
-            "$prog: file 2 is not in sorted order\n" }],
+            "$prog: file 2 is not in sorted order\n"
+          . "$prog: input is not in sorted order\n"}],
 
    # both inputs out-of-order on last pair
    ['ooo5', {IN=>{a=>"3\n1"}}, {IN=>{b=>"3\n2"}}, {EXIT=>1},
     {OUT => "\t\t3\n1\n\t2\n"},
     {ERR => "$prog: file 1 is not in sorted order\n".
-            "$prog: file 2 is not in sorted order\n" }],
+            "$prog: file 2 is not in sorted order\n"
+          . "$prog: input is not in sorted order\n"}],
 
    # first input out-of-order extended
    ['ooo5b', {IN=>{a=>"0\n3\n1"}}, {IN=>{b=>"2\n3"}}, {EXIT=>1},
     {OUT => "0\n\t2\n\t\t3\n1\n"},
-    {ERR => "$prog: file 1 is not in sorted order\n"}],
+    {ERR => "$prog: file 1 is not in sorted order\n"
+          . "$prog: input is not in sorted order\n"}],
 
    # second input out-of-order extended
    ['ooo5c', {IN=>{a=>"0\n3"}}, {IN=>{b=>"2\n3\n1"}}, {EXIT=>1},
     {OUT => "0\n\t2\n\t\t3\n\t1\n"},
-    {ERR => "$prog: file 2 is not in sorted order\n"}],
+    {ERR => "$prog: file 2 is not in sorted order\n"
+          . "$prog: input is not in sorted order\n"}],
 
    # both inputs out-of-order, but fully pairable
    ['ooo6', {IN=>{a=>"2\n1\n0"}}, {IN=>{b=>"2\n1\n0"}}, {EXIT=>0},

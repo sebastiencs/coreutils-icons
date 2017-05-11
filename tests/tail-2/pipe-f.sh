@@ -1,7 +1,7 @@
 #!/bin/sh
-# ensure that :|tail -f doesn't hang, per POSIX
+# ensure that tail -f doesn't hang in various cases
 
-# Copyright (C) 2009-2017 Free Software Foundation, Inc.
+# Copyright (C) 2009-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,20 +14,50 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
-print_ver_ tail
+print_ver_ tail test
+trap_sigpipe_or_skip_
 
+# Speedup the non inotify case
+fastpoll='-s.1 --max-unchanged-stats=1'
+
+for mode in '' '---disable-inotify'; do
+# Ensure :|tail -f doesn't hang, per POSIX
 echo oo > exp || framework_failure_
-echo foo | timeout 10 tail -f -c3 > out || fail=1
+echo foo | timeout 10 tail -f $mode $fastpoll -c3 > out || fail=1
 compare exp out || fail=1
-
 cat <<\EOF > exp || framework_failure_
 ==> standard input <==
 ar
 EOF
-echo bar | returns_ 1 timeout 10 tail -f -c3 - missing > out || fail=1
+echo bar | returns_ 1 \
+ timeout 10 tail -f $mode $fastpoll -c3 - missing > out || fail=1
 compare exp out || fail=1
+
+# This would wait indefinitely before v8.28 due to no EPIPE being
+# generated due to no data written after the first small amount.
+# Also check tail exits if SIGPIPE is being ignored.
+# Note 'trap - SIGPIPE' is ineffective if the initiating shell
+# has ignored SIGPIPE, but that's not the normal case.
+for disposition in '' '-'; do
+  (trap "$disposition" PIPE;
+   returns_ 124 timeout 10 \
+    tail -n2 -f $mode $fastpoll out && touch timed_out) |
+  sed 2q > out2
+  test -e timed_out && fail=1
+  compare exp out2 || fail=1
+  rm -f timed_out
+done
+
+# This would wait indefinitely before v8.28 (until first write)
+# test -w /dev/stdout is used to check that >&- is effective
+# which was seen not to be the case on NetBSD 7.1 / x86_64:
+if env test -w /dev/stdout >/dev/null &&
+   env test ! -w /dev/stdout >&-; then
+  (returns_ 1 timeout 10 tail -f $mode $fastpoll /dev/null >&-) || fail=1
+fi
+done
 
 Exit $fail

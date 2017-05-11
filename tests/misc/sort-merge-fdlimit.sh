@@ -2,7 +2,7 @@
 # Test whether sort avoids opening more file descriptors than it is
 # allowed when merging files.
 
-# Copyright (C) 2009-2017 Free Software Foundation, Inc.
+# Copyright (C) 2009-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ sort
@@ -57,12 +57,12 @@ done
 # ordinary redirection on the 'sort' command.  This is intended to
 # work around bugs in OpenBSD /bin/sh, and some other sh variants,
 # that squirrel away file descriptors before closing them; see
-# <https://lists.gnu.org/archive/html/bug-tar/2010-10/msg00075.html>.
+# <https://lists.gnu.org/r/bug-tar/2010-10/msg00075.html>.
 # This test finds the bug only with shells that do not close FDs on
 # exec, and will miss the bug (if present) on other shells, but it's
 # not easy to fix this without running afoul of the OpenBSD-like sh bugs.
-(seq 6 && echo 6) >exp || fail=1
-echo 6 >out || fail=1
+(seq 6 && echo 6) >exp || framework_failure_
+echo 6 >out || framework_failure_
 (exec 3<&- 4<&- 5<&- 6</dev/null 7<&6 8<&6 9<&6 &&
  ulimit -n 10 &&
  sort -n -m --batch-size=7 -o out out in/1 in/2 in/3 in/4 in/5 out

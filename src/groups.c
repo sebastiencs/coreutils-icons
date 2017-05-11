@@ -1,5 +1,5 @@
 /* groups -- print the groups a user is in
-   Copyright (C) 1989-2017 Free Software Foundation, Inc.
+   Copyright (C) 1989-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by James Youngman based on id.c and groups.sh,
    which were written by Arnold Robbins and David MacKenzie. */
@@ -122,17 +122,20 @@ main (int argc, char **argv)
   else
     {
       /* At least one argument.  Divulge the details of the specified users.  */
-      while (optind < argc)
+      for ( ; optind < argc; optind++)
         {
           struct passwd *pwd = getpwnam (argv[optind]);
           if (pwd == NULL)
-            die (EXIT_FAILURE, 0, _("%s: no such user"),
-                 quote (argv[optind]));
+            {
+              error (0, 0, _("%s: no such user"), quote (argv[optind]));
+              ok = false;
+              continue;
+            }
           ruid = pwd->pw_uid;
           rgid = egid = pwd->pw_gid;
 
           printf ("%s : ", argv[optind]);
-          if (!print_group_list (argv[optind++], ruid, rgid, egid, true, ' '))
+          if (!print_group_list (argv[optind], ruid, rgid, egid, true, ' '))
             ok = false;
           putchar ('\n');
         }

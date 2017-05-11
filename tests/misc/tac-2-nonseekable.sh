@@ -1,7 +1,7 @@
 #!/bin/sh
 # ensure that tac works with non-seekable or quasi-seekable inputs
 
-# Copyright (C) 2011-2017 Free Software Foundation, Inc.
+# Copyright (C) 2011-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,13 +14,13 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ tac
 
 echo x | tac - - > out 2> err || fail=1
-echo x > exp || fail=1
+echo x > exp || framework_failure_
 compare exp out || fail=1
 compare /dev/null err || fail=1
 
@@ -36,7 +36,10 @@ for file in /proc/version /sys/kernel/profiling; do
   fi
 done
 
+# Assume timeout is due to failure to close stdin with <&-
+# which was seen on NetBSD 7.1 / x86_64
+returns_ 124 timeout 10 tac - - <&- 2>err && skip_ 'error closing stdin'
 # This failed due to heap corruption from v8.15-v8.25 inclusive.
-returns_ 1 tac - - <&- 2>err || fail=1
+returns_ 1 timeout 10 tac - - <&- 2>err || fail=1
 
 Exit $fail

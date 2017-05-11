@@ -1,5 +1,5 @@
 /* tr -- a filter to translate characters
-   Copyright (C) 1991-2017 Free Software Foundation, Inc.
+   Copyright (C) 1991-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Jim Meyering */
 
@@ -1167,7 +1167,6 @@ validate_case_classes (struct Spec_list *s1, struct Spec_list *s2)
 {
   size_t n_upper = 0;
   size_t n_lower = 0;
-  unsigned int i;
   int c1 = 0;
   int c2 = 0;
   count old_s1_len = s1->length;
@@ -1180,7 +1179,7 @@ validate_case_classes (struct Spec_list *s1, struct Spec_list *s2)
   if (!s2->has_char_class)
     return;
 
-  for (i = 0; i < N_CHARS; i++)
+  for (int i = 0; i < N_CHARS; i++)
     {
       if (isupper (i))
         n_upper++;
@@ -1706,10 +1705,16 @@ main (int argc, char **argv)
 
   atexit (close_stdout);
 
-  while ((c = getopt_long (argc, argv, "+cCdst", long_options, NULL)) != -1)
+  while ((c = getopt_long (argc, argv, "+AcCdst", long_options, NULL)) != -1)
     {
       switch (c)
         {
+        case 'A':
+          /* Undocumented option, for compatibility with AIX.  */
+          setlocale (LC_COLLATE, "C");
+          setlocale (LC_CTYPE, "C");
+          break;
+
         case 'c':
         case 'C':
           complement = true;

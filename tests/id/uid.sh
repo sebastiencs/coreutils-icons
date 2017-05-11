@@ -1,6 +1,6 @@
 #!/bin/sh
 # Ensure that "id" works with numeric user ids
-# Copyright (C) 2013-2017 Free Software Foundation, Inc.
+# Copyright (C) 2013-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ id
@@ -23,6 +23,11 @@ user=$(id -nu) || fail=1
 
 # Ensure the empty user spec is discarded
 returns_ 1 id '' || fail=1
+
+# Ensure we don't exit early, and process all users
+id $user > user_out || fail=1
+returns_ 1 id '' $user >multi_user_out || fail=1
+compare user_out multi_user_out || fail=1
 
 for mode in '' '-G' '-g'; do
   id $mode $user > user_out || fail=1 # lookup name for comparison

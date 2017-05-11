@@ -1,7 +1,7 @@
 #!/bin/sh
 # exercise chcon
 
-# Copyright (C) 2007-2017 Free Software Foundation, Inc.
+# Copyright (C) 2007-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ chcon
@@ -35,7 +35,7 @@ r1=object_r
 t1=tmp_t
 range=s0
 ctx=$u1:$r1:$t1:$range
-chcon $ctx f || fail=1
+chcon $ctx f || skip_ "Failed to set context: $ctx"
 stat --printf='f|%C\n' f > out || fail=1
 
 # Use --reference.
@@ -57,7 +57,7 @@ for i in -u$u1 -r$r1 -t$t1; do
   stat --printf="f|$i|"'%C\n' f >> out || fail=1
 done
 
-cat <<EOF > exp || fail=1
+cat <<EOF > exp || framework_failure_
 f|$ctx
 g|$ctx
 f|--user=$u2|$u2:$r1:$t1:$range
@@ -72,7 +72,7 @@ EOF
 compare exp out || fail=1
 
 chcon --verbose -u$u1 f > out || fail=1
-echo "changing security context of 'f'" > exp
+echo "changing security context of 'f'" > exp || framework_failure_
 compare exp out || fail=1
 
 Exit $fail

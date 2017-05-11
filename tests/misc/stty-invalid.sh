@@ -1,7 +1,7 @@
 #!/bin/sh
 # Ensure that stty diagnoses invalid inputs, rather than silently misbehaving.
 
-# Copyright (C) 2007-2017 Free Software Foundation, Inc.
+# Copyright (C) 2007-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ stty
@@ -40,6 +40,15 @@ returns_ 1 stty $(echo $saved_state |sed 's/^[^:]*:/'$hex_2_64:/) \
   2>/dev/null || fail=1
 returns_ 1 stty $(echo $saved_state |sed 's/:[0-9a-f]*$/:'$hex_2_64/) \
   2>/dev/null || fail=1
+
+# From coreutils 5.3.0 to 8.28, the following would crash
+# due to incorrect argument handling.
+if tty -s </dev/tty; then
+  returns_ 1 stty eol -F /dev/tty || fail=1
+  returns_ 1 stty -F /dev/tty eol || fail=1
+  returns_ 1 stty -F/dev/tty eol || fail=1
+  returns_ 1 stty eol -F/dev/tty eol || fail=1
+fi
 
 # Just in case either of the above mistakenly succeeds (and changes
 # the state of our tty), try to restore the initial state.

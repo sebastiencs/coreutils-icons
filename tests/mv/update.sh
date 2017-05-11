@@ -1,7 +1,7 @@
 #!/bin/sh
 # make sure --update works as advertised
 
-# Copyright (C) 2001-2017 Free Software Foundation, Inc.
+# Copyright (C) 2001-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ cp mv
@@ -42,9 +42,9 @@ test -f new && fail=1
 case "$(cat old)" in new) ;; *) fail=1 ;; esac
 
 # Restore initial conditions.
-echo old > old || fail=1
+echo old > old || framework_failure_
 touch -d yesterday old || fail=1
-echo new > new || fail=1
+echo new > new || framework_failure_
 
 # This will actually perform the copy.
 cp --update new old || fail=1

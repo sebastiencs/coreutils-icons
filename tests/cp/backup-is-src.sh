@@ -1,7 +1,7 @@
 #!/bin/sh
 # Test cp backup to source file.
 
-# Copyright (C) 1998-2017 Free Software Foundation, Inc.
+# Copyright (C) 1998-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ cp
@@ -28,7 +28,7 @@ cp --b=simple a~ a > out 2>&1 && fail=1
 sed "s,cp:,XXX:," out > out2
 
 cat > exp <<\EOF
-XXX: backing up 'a' would destroy source;  'a~' not copied
+XXX: backing up 'a' might destroy source;  'a~' not copied
 EOF
 
 compare exp out2 || fail=1

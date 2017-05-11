@@ -2,7 +2,7 @@
 # make sure cp and mv can handle many combinations of local and
 # other-partition regular/symlink'd files.
 
-# Copyright (C) 2000-2017 Free Software Foundation, Inc.
+# Copyright (C) 2000-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ cp mv
@@ -73,7 +73,7 @@ for copy in cp mv; do
       case "$args" in *loc_sl*) slink=$loc_sl ;; esac
       case "$args" in *rem_sl*) slink=$rem_sl ;; esac
 
-      echo $contents > "$reg_abs" || fail=1
+      echo $contents > "$reg_abs" || framework_failure_
       ln -nsf "$reg_abs" $slink || fail=1
       actual_args=$(echo $args|sed 's,^,$,;s/ / $/')
       actual_args=$(eval echo $actual_args)
@@ -151,7 +151,7 @@ done
 test $fail = 1 &&
   { (exit 1); exit; }
 
-cat <<\EOF > expected
+cat <<\EOF > expected || framework_failure_
 1 cp loc_reg rem_sl
  [cp: 'loc_reg' and 'rem_sl' are the same file]
  (loc_reg) (rem_sl -> dir/loc_reg)

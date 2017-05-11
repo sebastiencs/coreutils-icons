@@ -1,5 +1,5 @@
 /* chgrp -- change group ownership of files
-   Copyright (C) 1989-2017 Free Software Foundation, Inc.
+   Copyright (C) 1989-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by David MacKenzie <djm@gnu.ai.mit.edu>. */
 
@@ -295,7 +295,7 @@ main (int argc, char **argv)
   else
     {
       char *group_name = argv[optind++];
-      chopt.group_name = (*group_name ? group_name : NULL);
+      chopt.group_name = (*group_name ? xstrdup (group_name) : NULL);
       gid = parse_group (group_name);
     }
 
@@ -313,7 +313,7 @@ main (int argc, char **argv)
                     (uid_t) -1, gid,
                     (uid_t) -1, (gid_t) -1, &chopt);
 
-  chopt_free (&chopt);
+  IF_LINT (chopt_free (&chopt));
 
   return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Test warnings for sort options
 
-# Copyright (C) 2010-2017 Free Software Foundation, Inc.
+# Copyright (C) 2010-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,64 +14,62 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ sort
 
 cat <<\EOF > exp
 1
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 sort: key 1 has zero width and will be ignored
 2
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 sort: key 1 has zero width and will be ignored
 3
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 sort: key 1 is numeric and spans multiple fields
 4
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 sort: options '-bghMRrV' are ignored
 5
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 sort: options '-bghMRV' are ignored
 sort: option '-r' only applies to last-resort comparison
 6
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 sort: option '-r' only applies to last-resort comparison
 7
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 sort: leading blanks are significant in key 2; consider also specifying 'b'
 sort: options '-bg' are ignored
 8
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 9
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 sort: option '-b' is ignored
 10
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 11
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 sort: leading blanks are significant in key 1; consider also specifying 'b'
 12
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 sort: leading blanks are significant in key 1; consider also specifying 'b'
 13
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 sort: leading blanks are significant in key 1; consider also specifying 'b'
 sort: option '-d' is ignored
 14
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 sort: leading blanks are significant in key 1; consider also specifying 'b'
 sort: option '-i' is ignored
 15
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 16
-sort: using simple byte comparison
+sort: text ordering performed using simple byte comparison
 17
-sort: using simple byte comparison
-18
-sort: failed to set locale; using simple byte comparison
+sort: text ordering performed using simple byte comparison
 EOF
 
 echo 1 >> out
@@ -108,13 +106,27 @@ echo 16 >> out
 sort -rM --debug /dev/null 2>>out #no warning
 echo 17 >> out
 sort -rM -k1,1 --debug /dev/null 2>>out #no warning
-echo 18 >> out
-LC_ALL=missing sort --debug /dev/null 2>>out
 
 compare exp out || fail=1
 
+
 cat <<\EOF > exp
-sort: using simple byte comparison
+sort: failed to set locale
+sort: text ordering performed using simple byte comparison
+EOF
+
+LC_ALL=missing sort --debug /dev/null 2>out
+
+# musl libc maps unknown locales to the default utf8 locale
+# with no way to determine failures.  This is discussed at:
+# http://www.openwall.com/lists/musl/2016/04/02/1
+if ! grep -E 'using .*(missing|C.UTF-8).* sorting rules' out; then
+  compare exp out || fail=1
+fi
+
+
+cat <<\EOF > exp
+sort: text ordering performed using simple byte comparison
 sort: key 1 is numeric and spans multiple fields
 sort: obsolescent key '+2 -1' used; consider '-k 3,1' instead
 sort: key 2 has zero width and will be ignored

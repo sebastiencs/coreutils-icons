@@ -1,5 +1,5 @@
 /* set-fields.c -- common functions for parsing field list
-   Copyright (C) 2015-2017 Free Software Foundation, Inc.
+   Copyright (C) 2015-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Extracted from cut.c by Assaf Gordon */
 
@@ -45,7 +45,7 @@ static size_t n_frp_allocated;
    space if necessary.  Update global variable N_FRP.  When allocating,
    update global variable N_FRP_ALLOCATED.  */
 static void
-add_range_pair (size_t lo, size_t hi)
+add_range_pair (uintmax_t lo, uintmax_t hi)
 {
   if (n_frp == n_frp_allocated)
     frp = X2NREALLOC (frp, &n_frp_allocated);
@@ -73,7 +73,6 @@ complement_rp (void)
 {
   struct field_range_pair *c = frp;
   size_t n = n_frp;
-  size_t i;
 
   frp = NULL;
   n_frp = 0;
@@ -82,7 +81,7 @@ complement_rp (void)
   if (c[0].lo > 1)
     add_range_pair (1, c[0].lo - 1);
 
-  for (i = 1; i < n; ++i)
+  for (size_t i = 1; i < n; ++i)
     {
       if (c[i-1].hi + 1 == c[i].lo)
         continue;
@@ -90,8 +89,8 @@ complement_rp (void)
       add_range_pair (c[i-1].hi + 1, c[i].lo - 1);
     }
 
-  if (c[n-1].hi < SIZE_MAX)
-    add_range_pair (c[n-1].hi + 1, SIZE_MAX);
+  if (c[n-1].hi < UINTMAX_MAX)
+    add_range_pair (c[n-1].hi + 1, UINTMAX_MAX);
 
   free (c);
 }
@@ -101,7 +100,7 @@ complement_rp (void)
    be composed of one or more numbers or ranges of numbers, separated
    by blanks or commas.  Incomplete ranges may be given: '-m' means '1-m';
    'n-' means 'n' through end of line.
-   n=0 and n>=SIZE_MAX values will trigger an error.
+   n=0 and n>=UINTMAX_MAX values will trigger an error.
 
    if SETFLD_ALLOW_DASH option is used, a single '-' means all fields
    (otherwise a single dash triggers an error).
@@ -122,29 +121,28 @@ complement_rp (void)
 
    The first field is stored as 1 (zero is not used).
    An open-ended range (i.e., until the last field of the input line)
-   is indicated with hi = SIZE_MAX.
+   is indicated with hi = UINTMAX_MAX.
 
-   A sentinel of SIZE_MAX/SIZE_MAX is always added as the last
+   A sentinel of UINTMAX_MAX/UINTMAX_MAX is always added as the last
    field range pair.
 
    Examples:
-   given '1-2,4', frp = [ { .lo = 1,        .hi = 2 },
-                          { .lo = 4,        .hi = 4 },
-                          { .lo = SIZE_MAX, .hi = SIZE_MAX } ];
+   given '1-2,4', frp = [ { .lo = 1,           .hi = 2 },
+                          { .lo = 4,           .hi = 4 },
+                          { .lo = UINTMAX_MAX, .hi = UINTMAX_MAX } ];
 
-   given '3-',    frp = [ { .lo = 3,        .hi = SIZE_MAX },
-                          { .lo = SIZE_MAX, .hi = SIZE_MAX } ];
+   given '3-',    frp = [ { .lo = 3,           .hi = UINTMAX_MAX },
+                          { .lo = UINTMAX_MAX, .hi = UINTMAX_MAX } ];
 */
 void
 set_fields (const char *fieldstr, unsigned int options)
 {
-  size_t initial = 1;		/* Value of first number in a range.  */
-  size_t value = 0;		/* If nonzero, a number being accumulated.  */
+  uintmax_t initial = 1;	/* Value of first number in a range.  */
+  uintmax_t value = 0;		/* If nonzero, a number being accumulated.  */
   bool lhs_specified = false;
   bool rhs_specified = false;
   bool dash_found = false;	/* True if a '-' is found in this field.  */
 
-  size_t i;
   bool in_digits = false;
 
   /* Collect and store in RP the range end points. */
@@ -203,7 +201,7 @@ set_fields (const char *fieldstr, unsigned int options)
               if (!rhs_specified)
                 {
                   /* 'n-'.  From 'initial' to end of line. */
-                  add_range_pair (initial, SIZE_MAX);
+                  add_range_pair (initial, UINTMAX_MAX);
                 }
               else
                 {
@@ -249,8 +247,8 @@ set_fields (const char *fieldstr, unsigned int options)
             lhs_specified = 1;
 
           /* Detect overflow.  */
-          if (!DECIMAL_DIGIT_ACCUMULATE (value, *fieldstr - '0', size_t)
-              || value == SIZE_MAX)
+          if (!DECIMAL_DIGIT_ACCUMULATE (value, *fieldstr - '0', uintmax_t)
+              || value == UINTMAX_MAX)
             {
               /* In case the user specified -c$(echo 2^64|bc),22,
                  complain only about the first number.  */
@@ -285,7 +283,7 @@ set_fields (const char *fieldstr, unsigned int options)
   qsort (frp, n_frp, sizeof (frp[0]), compare_ranges);
 
   /* Merge range pairs (e.g. `2-5,3-4' becomes `2-5'). */
-  for (i = 0; i < n_frp; ++i)
+  for (size_t i = 0; i < n_frp; ++i)
     {
       for (size_t j = i + 1; j < n_frp; ++j)
         {
@@ -309,7 +307,7 @@ set_fields (const char *fieldstr, unsigned int options)
      and for performance reasons.  */
   ++n_frp;
   frp = xrealloc (frp, n_frp * sizeof (struct field_range_pair));
-  frp[n_frp - 1].lo = frp[n_frp - 1].hi = SIZE_MAX;
+  frp[n_frp - 1].lo = frp[n_frp - 1].hi = UINTMAX_MAX;
 }
 
 void

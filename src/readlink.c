@@ -1,5 +1,5 @@
 /* readlink -- display value of a symbolic link.
-   Copyright (C) 2002-2017 Free Software Foundation, Inc.
+   Copyright (C) 2002-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Dmitry V. Levin */
 
@@ -78,7 +78,7 @@ usage (int status)
 \n\
                                 without requirements on components existence\n\
   -n, --no-newline              do not output the trailing delimiter\n\
-  -q, --quiet,\n\
+  -q, --quiet\n\
   -s, --silent                  suppress most error messages (on by default)\n\
   -v, --verbose                 report error messages\n\
   -z, --zero                    end each output line with NUL, not newline\n\

@@ -1,5 +1,5 @@
 /* Compute checksums of files or strings.
-   Copyright (C) 1995-2017 Free Software Foundation, Inc.
+   Copyright (C) 1995-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>.  */
 
@@ -157,6 +157,9 @@ static bool strict = false;
 /* Whether a BSD reversed format checksum is detected.  */
 static int bsd_reversed = -1;
 
+/* line delimiter.  */
+static unsigned char delim = '\n';
+
 #if HASH_ALGO_BLAKE2
 static char const *const algorithm_in_string[] =
 {
@@ -210,6 +213,7 @@ static struct option const long_options[] =
   { "warn", no_argument, NULL, 'w' },
   { "strict", no_argument, NULL, STRICT_OPTION },
   { "tag", no_argument, NULL, TAG_OPTION },
+  { "zero", no_argument, NULL, 'z' },
   { GETOPT_HELP_OPTION_DECL },
   { GETOPT_VERSION_OPTION_DECL },
   { NULL, 0, NULL, 0 }
@@ -263,6 +267,10 @@ Print or check %s (%d-bit) checksums.\n\
   -t, --text           read in text mode (default)\n\
 "), stdout);
       fputs (_("\
+  -z, --zero           end each output line with NUL, not newline,\n\
+                       and disable file name escaping\n\
+"), stdout);
+      fputs (_("\
 \n\
 The following five options are useful only when verifying checksums:\n\
       --ignore-missing  don't fail or report status for missing files\n\
@@ -279,7 +287,10 @@ The following five options are useful only when verifying checksums:\n\
 The sums are computed as described in %s.  When checking, the input\n\
 should be a former output of this program.  The default mode is to print a\n\
 line with checksum, a space, a character indicating input mode ('*' for binary,\
-\n' ' for text or where binary is insignificant), and name for each FILE.\n"),
+\n' ' for text or where binary is insignificant), and name for each FILE.\n\
+\n\
+Note: There is no difference between binary mode and text mode on GNU systems.\
+\n"),
               DIGEST_REFERENCE);
       emit_ancillary_info (PROGRAM_NAME);
     }
@@ -347,8 +358,7 @@ filename_unescape (char *s, size_t s_len)
 static bool _GL_ATTRIBUTE_PURE
 hex_digits (unsigned char const *s)
 {
-  unsigned int i;
-  for (i = 0; i < digest_hex_bytes; i++)
+  for (unsigned int i = 0; i < digest_hex_bytes; i++)
     {
       if (!isxdigit (*s))
         return false;
@@ -431,7 +441,8 @@ split_3 (char *s, size_t s_len,
 #if HASH_ALGO_BLAKE2
       /* Terminate and match algorithm name.  */
       char const *algo_name = &s[i - algo_name_len];
-      while (! ISWHITE (s[i]) && s[i] != '-' && s[i] != '(')
+      /* Skip algorithm variants.  */
+      while (s[i] && ! ISWHITE (s[i]) && s[i] != '-' && s[i] != '(')
         ++i;
       bool length_specified = s[i] == '-';
       bool openssl_format = s[i] == '('; /* and no length_specified */
@@ -875,10 +886,10 @@ main (int argc, char **argv)
   setvbuf (stdout, NULL, _IOLBF, 0);
 
 #if HASH_ALGO_BLAKE2
-  const char* short_opts = "l:bctw";
+  const char* short_opts = "l:bctwz";
   const char* b2_length_str = "";
 #else
-  const char* short_opts = "bctw";
+  const char* short_opts = "bctwz";
 #endif
 
   while ((opt = getopt_long (argc, argv, short_opts, long_options, NULL)) != -1)
@@ -930,6 +941,9 @@ main (int argc, char **argv)
         prefix_tag = true;
         binary = 1;
         break;
+      case 'z':
+        delim = '\0';
+        break;
       case_GETOPT_HELP_CHAR;
       case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);
       default:
@@ -963,6 +977,13 @@ main (int argc, char **argv)
      error (0, 0, _("--tag does not support --text mode"));
      usage (EXIT_FAILURE);
    }
+
+  if (delim != '\n' && do_check)
+    {
+      error (0, 0, _("the --zero option is not supported when "
+                     "verifying checksums"));
+      usage (EXIT_FAILURE);
+    }
 
   if (prefix_tag && do_check)
     {
@@ -1043,7 +1064,8 @@ main (int argc, char **argv)
                  against old (hashed) outputs, in the presence of files
                  containing '\\' characters, we decided to not simplify the
                  output in this case.  */
-              bool needs_escape = strchr (file, '\\') || strchr (file, '\n');
+              bool needs_escape = (strchr (file, '\\') || strchr (file, '\n'))
+                                  && delim == '\n';
 
               if (prefix_tag)
                 {
@@ -1062,14 +1084,12 @@ main (int argc, char **argv)
                   fputs (") = ", stdout);
                 }
 
-              size_t i;
-
               /* Output a leading backslash if the file name contains
                  a newline or backslash.  */
               if (!prefix_tag && needs_escape)
                 putchar ('\\');
 
-              for (i = 0; i < (digest_hex_bytes / 2); ++i)
+              for (size_t i = 0; i < (digest_hex_bytes / 2); ++i)
                 printf ("%02x", bin_buffer[i]);
 
               if (!prefix_tag)
@@ -1081,7 +1101,7 @@ main (int argc, char **argv)
                   print_filename (file, needs_escape);
                 }
 
-              putchar ('\n');
+              putchar (delim);
             }
         }
     }

@@ -1,6 +1,6 @@
 /* chown-core.h -- types and prototypes shared by chown and chgrp.
 
-   Copyright (C) 2000-2017 Free Software Foundation, Inc.
+   Copyright (C) 2000-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef CHOWN_CORE_H
 # define CHOWN_CORE_H
@@ -68,14 +68,14 @@ struct Chown_option
 void
 chopt_init (struct Chown_option *);
 
-void _GL_ATTRIBUTE_PURE _GL_ATTRIBUTE_CONST
+void
 chopt_free (struct Chown_option *);
 
 char *
-gid_to_name (gid_t);
+gid_to_name (gid_t) _GL_ATTRIBUTE_MALLOC;
 
-char * _GL_ATTRIBUTE_PURE
-uid_to_name (uid_t);
+char *
+uid_to_name (uid_t) _GL_ATTRIBUTE_MALLOC;
 
 bool
 chown_files (char **files, int bit_flags,

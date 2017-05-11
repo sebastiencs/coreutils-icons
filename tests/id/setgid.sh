@@ -1,7 +1,7 @@
 #!/bin/sh
 # Verify that id [-G] prints the right group when run set-GID.
 
-# Copyright (C) 2012-2017 Free Software Foundation, Inc.
+# Copyright (C) 2012-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,16 +14,21 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ id
 require_root_
 
+getlimits_
+
 # Construct a different group number
 gp1=$NON_ROOT_GID
 gp1=$(expr $gp1 + 1) ||
   skip_ "failed to adjust GID $NON_ROOT_GID"
+
+test "$gp1" -lt $GID_T_MAX ||
+  skip_ "GID $gp1 is reserved on some systems"
 
 echo $gp1 > exp || framework_failure_
 

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in -*-Makefile-*-.
 
-## Copyright (C) 2007-2017 Free Software Foundation, Inc.
+## Copyright (C) 2007-2019 Free Software Foundation, Inc.
 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
 ## GNU General Public License for more details.
 
 ## You should have received a copy of the GNU General Public License
-## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Indirections required so that we'll still be able to know the
 # complete list of our tests even if the user overrides TESTS
@@ -28,7 +28,7 @@ TEST_EXTENSIONS = .sh .pl .xpl
 if HAVE_PERL
 TESTSUITE_PERL = $(PERL)
 else
-TESTSUITE_PERL = $(SHELL) $(srcdir)/no-perl
+TESTSUITE_PERL = $(SHELL) $(srcdir)/tests/no-perl
 endif
 
 # Options passed to the perl invocations running the perl test scripts.
@@ -66,6 +66,7 @@ TESTS_ENVIRONMENT =				\
   abs_top_srcdir='$(abs_top_srcdir)'		\
   abs_srcdir='$(abs_srcdir)'			\
   built_programs='$(built_programs) $(single_binary_progs)' \
+  fail=0					\
   host_os=$(host_os)				\
   host_triplet='$(host_triplet)'		\
   srcdir='$(srcdir)'				\
@@ -113,6 +114,7 @@ all_root_tests =				\
   tests/cp/cp-mv-enotsup-xattr.sh		\
   tests/cp/capability.sh			\
   tests/cp/sparse-fiemap.sh			\
+  tests/cp/cross-dev-symlink.sh			\
   tests/dd/skip-seek-past-dev.sh		\
   tests/df/problematic-chars.sh			\
   tests/df/over-mount-device.sh			\
@@ -135,6 +137,7 @@ all_root_tests =				\
   tests/rm/one-file-system.sh			\
   tests/rm/read-only.sh				\
   tests/tail-2/append-only.sh			\
+  tests/tail-2/end-of-device.sh			\
   tests/touch/now-owned-by-other.sh
 
 ALL_RECURSIVE_TARGETS += check-root
@@ -160,6 +163,7 @@ check-root:
 
 all_tests =					\
   tests/misc/help-version.sh			\
+  tests/misc/help-version-getopt.sh		\
   tests/tail-2/inotify-race.sh			\
   tests/tail-2/inotify-race2.sh			\
   tests/misc/invalid-opt.pl			\
@@ -177,6 +181,7 @@ all_tests =					\
   tests/tail-2/inotify-rotate.sh		\
   tests/tail-2/inotify-rotate-resources.sh	\
   tests/tail-2/inotify-dir-recreate.sh		\
+  tests/tail-2/inotify-only-regular.sh		\
   tests/chmod/no-x.sh				\
   tests/chgrp/basic.sh				\
   tests/rm/dangling-symlink.sh			\
@@ -233,12 +238,15 @@ all_tests =					\
   tests/fmt/base.pl				\
   tests/fmt/long-line.sh			\
   tests/fmt/goal-option.sh			\
+  tests/misc/echo.sh				\
   tests/misc/env.sh				\
+  tests/misc/env-signal-handler.sh		\
   tests/misc/ptx.pl				\
   tests/misc/test.pl				\
   tests/misc/seq.pl				\
   tests/misc/seq-epipe.sh			\
   tests/misc/seq-io-errors.sh			\
+  tests/misc/seq-locale.sh			\
   tests/misc/seq-long-double.sh			\
   tests/misc/seq-precision.sh			\
   tests/misc/head.pl				\
@@ -266,6 +274,7 @@ all_tests =					\
   tests/misc/wc.pl				\
   tests/misc/wc-files0-from.pl			\
   tests/misc/wc-files0.sh			\
+  tests/misc/wc-nbsp.sh				\
   tests/misc/wc-parallel.sh			\
   tests/misc/wc-proc.sh				\
   tests/misc/cat-proc.sh			\
@@ -273,6 +282,7 @@ all_tests =					\
   tests/misc/cat-self.sh			\
   tests/misc/base64.pl				\
   tests/misc/basename.pl			\
+  tests/misc/basenc.pl				\
   tests/misc/close-stdout.sh			\
   tests/misc/chroot-fail.sh			\
   tests/misc/comm.pl				\
@@ -287,13 +297,17 @@ all_tests =					\
   tests/misc/dircolors.pl			\
   tests/misc/dirname.pl				\
   tests/misc/env-null.sh			\
+  tests/misc/env-S.pl				\
+  tests/misc/env-S-script.sh			\
   tests/misc/expand.pl				\
   tests/misc/expr.pl				\
+  tests/misc/expr-multibyte.pl			\
   tests/misc/factor.pl				\
   tests/misc/factor-parallel.sh			\
   tests/misc/false-status.sh			\
   tests/misc/fold.pl				\
   tests/misc/groups-dash.sh			\
+  tests/misc/groups-process-all.sh		\
   tests/misc/groups-version.sh			\
   tests/misc/head-c.sh				\
   tests/misc/head-pos.sh			\
@@ -400,6 +414,7 @@ all_tests =					\
   tests/misc/tac-2-nonseekable.sh		\
   tests/misc/tail.pl				\
   tests/misc/tee.sh				\
+  tests/misc/test-N.sh				\
   tests/misc/test-diag.pl			\
   tests/misc/time-style.sh			\
   tests/misc/timeout.sh				\
@@ -418,6 +433,7 @@ all_tests =					\
   tests/misc/truncate-relative.sh		\
   tests/misc/tsort.pl				\
   tests/misc/tty.sh				\
+  tests/misc/usage_vs_getopt.sh			\
   tests/misc/unexpand.pl			\
   tests/misc/uniq.pl				\
   tests/misc/uniq-perf.sh			\
@@ -508,6 +524,7 @@ all_tests =					\
   tests/dd/misc.sh				\
   tests/dd/no-allocate.sh			\
   tests/dd/nocache.sh				\
+  tests/dd/nocache_eof.sh			\
   tests/dd/not-rewound.sh			\
   tests/dd/reblock.sh				\
   tests/dd/skip-seek.pl				\
@@ -569,17 +586,20 @@ all_tests =					\
   tests/ln/sf-1.sh				\
   tests/ln/slash-decorated-nonexistent-dest.sh	\
   tests/ln/target-1.sh				\
+  tests/ls/a-option.sh				\
   tests/ls/abmon-align.sh			\
   tests/ls/block-size.sh			\
   tests/ls/color-clear-to-eol.sh		\
   tests/ls/color-dtype-dir.sh			\
   tests/ls/color-norm.sh			\
   tests/ls/color-term.sh			\
+  tests/ls/color-ext.sh				\
   tests/ls/dangle.sh				\
   tests/ls/dired.sh				\
   tests/ls/file-type.sh				\
   tests/ls/follow-slink.sh			\
   tests/ls/getxattr-speedup.sh			\
+  tests/ls/group-dirs.sh			\
   tests/ls/hex-option.sh			\
   tests/ls/infloop.sh				\
   tests/ls/inode.sh				\
@@ -600,9 +620,11 @@ all_tests =					\
   tests/ls/stat-free-color.sh			\
   tests/ls/stat-free-symlinks.sh		\
   tests/ls/stat-vs-dirent.sh			\
+  tests/ls/symlink-quote.sh			\
   tests/ls/symlink-slash.sh			\
   tests/ls/time-style-diag.sh			\
   tests/ls/x-option.sh				\
+  tests/ls/hyperlink.sh				\
   tests/mkdir/p-1.sh				\
   tests/mkdir/p-2.sh				\
   tests/mkdir/p-3.sh				\

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # Test join.
 
-# Copyright (C) 2008-2017 Free Software Foundation, Inc.
+# Copyright (C) 2008-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use strict;
 
@@ -216,13 +216,17 @@ my @tv = (
 ['chkodr-5d', '',
  ["a\nx\n\n", "b\ny\n\n"], "", 1,
  "$prog: chkodr-5d.1:3: is not sorted: \n" .
- "$prog: chkodr-5d.2:3: is not sorted: \n"],
+ "$prog: chkodr-5d.2:3: is not sorted: \n" .
+ "$prog: input is not in sorted order\n"
+ ],
 
 # Similar, but make it so each offending line has no newline.
 ['chkodr-5e', '',
  ["a\nx\no", "b\ny\np"], "", 1,
  "$prog: chkodr-5e.1:3: is not sorted: o\n" .
- "$prog: chkodr-5e.2:3: is not sorted: p\n"],
+ "$prog: chkodr-5e.2:3: is not sorted: p\n" .
+ "$prog: input is not in sorted order\n"
+ ],
 
 # Without order check, both inputs out of order and some lines
 # unpairable.  This is NOT supported by the GNU extension.  All that

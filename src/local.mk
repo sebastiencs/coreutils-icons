@@ -1,7 +1,7 @@
 # Make coreutils programs.                             -*-Makefile-*-
 # This is included by the top-level Makefile.am.
 
-## Copyright (C) 1990-2017 Free Software Foundation, Inc.
+## Copyright (C) 1990-2019 Free Software Foundation, Inc.
 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 ## GNU General Public License for more details.
 ##
 ## You should have received a copy of the GNU General Public License
-## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # FIXME: once lib/ and gnulib-tests/ are also converted, hoist to Makefile.am
 AM_CFLAGS = $(WERROR_CFLAGS)
@@ -99,6 +99,7 @@ LDADD = src/libver.a lib/libcoreutils.a $(LIBINTL) lib/libcoreutils.a
 src_arch_LDADD = $(LDADD)
 src_base64_LDADD = $(LDADD)
 src_base32_LDADD = $(LDADD)
+src_basenc_LDADD = $(LDADD)
 src_basename_LDADD = $(LDADD)
 src_cat_LDADD = $(LDADD)
 src_chcon_LDADD = $(LDADD)
@@ -357,6 +358,7 @@ src_coreutils_SOURCES = src/coreutils.c
 
 src_cp_SOURCES = src/cp.c $(copy_sources) $(selinux_sources)
 src_dir_SOURCES = src/ls.c src/ls-dir.c src/ls-icons.c
+src_env_SOURCES = src/env.c src/operand2sig.c
 src_vdir_SOURCES = src/ls.c src/ls-vdir.c src/ls-icons.c
 src_id_SOURCES = src/id.c src/group-list.c
 src_groups_SOURCES = src/groups.c src/group-list.c
@@ -399,16 +401,25 @@ src_sha384sum_SOURCES = src/md5sum.c
 src_sha384sum_CPPFLAGS = -DHASH_ALGO_SHA384=1 $(AM_CPPFLAGS)
 src_sha512sum_SOURCES = src/md5sum.c
 src_sha512sum_CPPFLAGS = -DHASH_ALGO_SHA512=1 $(AM_CPPFLAGS)
-src_b2sum_CPPFLAGS = -include config.h -DHASH_ALGO_BLAKE2=1 \
-		     $(AM_CPPFLAGS)
+# Include the file on the command line to avoid modifying
+# the blake2 upstream source
+if USE_XLC_INCLUDE
+src_b2sum_CPPFLAGS = -qinclude=config.h
+else
+src_b2sum_CPPFLAGS = -include config.h
+endif
+src_b2sum_CPPFLAGS += -DHASH_ALGO_BLAKE2=1 $(AM_CPPFLAGS)
 src_b2sum_SOURCES = src/md5sum.c \
 		    src/blake2/blake2.h src/blake2/blake2-impl.h \
 		    src/blake2/blake2b-ref.c \
 		    src/blake2/b2sum.c src/blake2/b2sum.h
 
+src_base64_SOURCES = src/basenc.c
 src_base64_CPPFLAGS = -DBASE_TYPE=64 $(AM_CPPFLAGS)
-src_base32_SOURCES = src/base64.c
+src_base32_SOURCES = src/basenc.c
 src_base32_CPPFLAGS = -DBASE_TYPE=32 $(AM_CPPFLAGS)
+src_basenc_SOURCES = src/basenc.c
+src_basenc_CPPFLAGS = -DBASE_TYPE=42 $(AM_CPPFLAGS)
 
 src_ginstall_CPPFLAGS = -DENABLE_MATCHPATHCON=1 $(AM_CPPFLAGS)
 
@@ -519,6 +530,7 @@ fs_normalize_perl_subst =			\
   -e 's/MINIX2_SUPER_MAGIC2\b/MINIX_V2_30/;'	\
   -e 's/MINIX3_SUPER_MAGIC\b/MINIX_V3/;'	\
   -e 's/CIFS_MAGIC_NUMBER/CIFS/;'		\
+  -e 's/AFS_FS/KAFS/;'				\
   -e 's/(_SUPER)?_MAGIC//;'			\
   -e 's/\s+0x(\S+)/" 0x" . uc $$1/e;'		\
   -e 's/(\s+0x)(\X{3})\b/$${1}0$$2/;'		\

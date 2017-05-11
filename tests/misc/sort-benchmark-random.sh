@@ -1,7 +1,7 @@
 #!/bin/sh
 # Benchmark sort on randomly generated data.
 
-# Copyright (C) 2010-2017 Free Software Foundation, Inc.
+# Copyright (C) 2010-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,16 +14,17 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Written by Glen Lenker.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ sort
+require_perl_
 
 very_expensive_
 
-perl -e '
+$PERL -e '
 my $num_lines = 500000;
 my $length = 100;
 
@@ -39,7 +40,7 @@ for (my $i=0; $i < $num_lines; $i++)
 # We need to generate a lot of data for sort to show a noticeable
 # improvement in performance. Sorting it in PERL may take awhile.
 
-perl -e '
+$PERL -e '
 open (FILE, "<in");
 my @list = <FILE>;
 print sort(@list);

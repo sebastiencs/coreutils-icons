@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # Test the diagnostics of "test".
 
-# Copyright (C) 2006-2017 Free Software Foundation, Inc.
+# Copyright (C) 2006-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use strict;
 
@@ -26,8 +26,8 @@ use strict;
 my @Tests =
     (
      # In coreutils-5.93, this diagnostic lacked the newline.
-     ['o', '-o arg', {ERR => "test: extra argument '-o'\n"},
-      {ERR_SUBST => 's!^.*:!test:!'},
+     ['o', '-o arg', {ERR => "test: '-o': unary operator expected\n"},
+      {ERR_SUBST => 's!^.*test:!test:!'},
       {EXIT => 2}],
     );
 

@@ -1,5 +1,5 @@
 /* fold -- wrap each input line to fit in specified width.
-   Copyright (C) 1991-2017 Free Software Foundation, Inc.
+   Copyright (C) 1991-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by David MacKenzie, djm@gnu.ai.mit.edu. */
 
@@ -278,7 +278,7 @@ main (int argc, char **argv)
               optargbuf[1] = '\0';
               optarg = optargbuf;
             }
-          /* Fall through.  */
+          FALLTHROUGH;
         case 'w':		/* Line width. */
           width = xdectoumax (optarg, 1, SIZE_MAX - TAB_WIDTH - 1, "",
                               _("invalid number of columns"), 0);

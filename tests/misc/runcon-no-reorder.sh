@@ -1,7 +1,7 @@
 #!/bin/sh
 # Ensure that runcon does not reorder its arguments.
 
-# Copyright (C) 2007-2017 Free Software Foundation, Inc.
+# Copyright (C) 2007-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ runcon
@@ -30,7 +30,7 @@ echo "$diag" > exp || framework_failure_
 runcon $(id -Z) true -j 2> out && > exp
 
 # When run on a system with no /selinux/context (i.e., in a chroot),
-# it chcon fails with this: "runcon: invalid context: \
+# it fails with this: "runcon: invalid context: \
 # root:system_r:unconfined_t:s0-s0:c0.c1023: No such file or directory"
 # That diagnostic is ok, too, so map it to the more common one.
 case $(cat out) in

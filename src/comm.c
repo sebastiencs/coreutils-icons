@@ -1,5 +1,5 @@
 /* comm -- compare two sorted files line by line.
-   Copyright (C) 1986-2017 Free Software Foundation, Inc.
+   Copyright (C) 1986-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Richard Stallman and David MacKenzie. */
 
@@ -493,7 +493,7 @@ main (int argc, char **argv)
   compare_files (argv + optind);
 
   if (issued_disorder_warning[0] || issued_disorder_warning[1])
-    return EXIT_FAILURE;
+    die (EXIT_FAILURE, 0, _("input is not in sorted order"));
   else
     return EXIT_SUCCESS;
 }

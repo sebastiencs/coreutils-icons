@@ -1,7 +1,7 @@
 #!/bin/sh
 # Ensure rm -r DIR does not prompt for very long full relative names in DIR.
 
-# Copyright (C) 2008-2017 Free Software Foundation, Inc.
+# Copyright (C) 2008-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ rm
@@ -34,7 +34,6 @@ mkdir x || framework_failure_
 cd x || framework_failure_
 
 # Construct a hierarchy containing a relative file with a long name
-: ${PERL=perl}
 $PERL \
     -e 'my $d = "x" x 200; foreach my $i (1..52)' \
     -e '  { mkdir ($d, 0700) && chdir $d or die "$!" }' \

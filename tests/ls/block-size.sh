@@ -1,7 +1,7 @@
 #!/bin/sh
 # Exercise ls --block-size and related options.
 
-# Copyright (C) 2011-2017 Free Software Foundation, Inc.
+# Copyright (C) 2011-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ ls
@@ -39,6 +39,7 @@ POSIXLY_CORRECT=1 ls -k -og * | sed "$size_etc" >>../out || fail=1
 for var in BLOCKSIZE BLOCK_SIZE LS_BLOCK_SIZE; do
   for blocksize in 1 512 1K 1KiB; do
     (eval $var=$blocksize && export $var &&
+     echo "x x # $var=$blocksize" &&
      ls -og * &&
      ls -og -k * &&
      ls -og -k --block-size=$blocksize *
@@ -58,6 +59,7 @@ cat >exp <<'EOF'
 1024 Jan  1  2001 file1024
 262144 Jan  1  2001 file262144
 4096 Jan  1  2001 file4096
+# BLOCKSIZE=1
 1024 Jan  1  2001 file1024
 262144 Jan  1  2001 file262144
 4096 Jan  1  2001 file4096
@@ -67,36 +69,7 @@ cat >exp <<'EOF'
 1024 Jan  1  2001 file1024
 262144 Jan  1  2001 file262144
 4096 Jan  1  2001 file4096
-1024 Jan  1  2001 file1024
-262144 Jan  1  2001 file262144
-4096 Jan  1  2001 file4096
-1024 Jan  1  2001 file1024
-262144 Jan  1  2001 file262144
-4096 Jan  1  2001 file4096
-2 Jan  1  2001 file1024
-512 Jan  1  2001 file262144
-8 Jan  1  2001 file4096
-1024 Jan  1  2001 file1024
-262144 Jan  1  2001 file262144
-4096 Jan  1  2001 file4096
-1024 Jan  1  2001 file1024
-262144 Jan  1  2001 file262144
-4096 Jan  1  2001 file4096
-1 Jan  1  2001 file1024
-256 Jan  1  2001 file262144
-4 Jan  1  2001 file4096
-1024 Jan  1  2001 file1024
-262144 Jan  1  2001 file262144
-4096 Jan  1  2001 file4096
-1024 Jan  1  2001 file1024
-262144 Jan  1  2001 file262144
-4096 Jan  1  2001 file4096
-1 Jan  1  2001 file1024
-256 Jan  1  2001 file262144
-4 Jan  1  2001 file4096
-1024 Jan  1  2001 file1024
-262144 Jan  1  2001 file262144
-4096 Jan  1  2001 file4096
+# BLOCKSIZE=512
 1024 Jan  1  2001 file1024
 262144 Jan  1  2001 file262144
 4096 Jan  1  2001 file4096
@@ -106,30 +79,27 @@ cat >exp <<'EOF'
 2 Jan  1  2001 file1024
 512 Jan  1  2001 file262144
 8 Jan  1  2001 file4096
-2 Jan  1  2001 file1024
-512 Jan  1  2001 file262144
-8 Jan  1  2001 file4096
-2 Jan  1  2001 file1024
-512 Jan  1  2001 file262144
-8 Jan  1  2001 file4096
+# BLOCKSIZE=1K
+1024 Jan  1  2001 file1024
+262144 Jan  1  2001 file262144
+4096 Jan  1  2001 file4096
+1024 Jan  1  2001 file1024
+262144 Jan  1  2001 file262144
+4096 Jan  1  2001 file4096
 1 Jan  1  2001 file1024
 256 Jan  1  2001 file262144
 4 Jan  1  2001 file4096
+# BLOCKSIZE=1KiB
+1024 Jan  1  2001 file1024
+262144 Jan  1  2001 file262144
+4096 Jan  1  2001 file4096
+1024 Jan  1  2001 file1024
+262144 Jan  1  2001 file262144
+4096 Jan  1  2001 file4096
 1 Jan  1  2001 file1024
 256 Jan  1  2001 file262144
 4 Jan  1  2001 file4096
-1 Jan  1  2001 file1024
-256 Jan  1  2001 file262144
-4 Jan  1  2001 file4096
-1 Jan  1  2001 file1024
-256 Jan  1  2001 file262144
-4 Jan  1  2001 file4096
-1 Jan  1  2001 file1024
-256 Jan  1  2001 file262144
-4 Jan  1  2001 file4096
-1 Jan  1  2001 file1024
-256 Jan  1  2001 file262144
-4 Jan  1  2001 file4096
+# BLOCK_SIZE=1
 1024 Jan  1  2001 file1024
 262144 Jan  1  2001 file262144
 4096 Jan  1  2001 file4096
@@ -139,6 +109,7 @@ cat >exp <<'EOF'
 1024 Jan  1  2001 file1024
 262144 Jan  1  2001 file262144
 4096 Jan  1  2001 file4096
+# BLOCK_SIZE=512
 2 Jan  1  2001 file1024
 512 Jan  1  2001 file262144
 8 Jan  1  2001 file4096
@@ -148,6 +119,7 @@ cat >exp <<'EOF'
 2 Jan  1  2001 file1024
 512 Jan  1  2001 file262144
 8 Jan  1  2001 file4096
+# BLOCK_SIZE=1K
 1 Jan  1  2001 file1024
 256 Jan  1  2001 file262144
 4 Jan  1  2001 file4096
@@ -157,6 +129,47 @@ cat >exp <<'EOF'
 1 Jan  1  2001 file1024
 256 Jan  1  2001 file262144
 4 Jan  1  2001 file4096
+# BLOCK_SIZE=1KiB
+1 Jan  1  2001 file1024
+256 Jan  1  2001 file262144
+4 Jan  1  2001 file4096
+1 Jan  1  2001 file1024
+256 Jan  1  2001 file262144
+4 Jan  1  2001 file4096
+1 Jan  1  2001 file1024
+256 Jan  1  2001 file262144
+4 Jan  1  2001 file4096
+# LS_BLOCK_SIZE=1
+1024 Jan  1  2001 file1024
+262144 Jan  1  2001 file262144
+4096 Jan  1  2001 file4096
+1024 Jan  1  2001 file1024
+262144 Jan  1  2001 file262144
+4096 Jan  1  2001 file4096
+1024 Jan  1  2001 file1024
+262144 Jan  1  2001 file262144
+4096 Jan  1  2001 file4096
+# LS_BLOCK_SIZE=512
+2 Jan  1  2001 file1024
+512 Jan  1  2001 file262144
+8 Jan  1  2001 file4096
+2 Jan  1  2001 file1024
+512 Jan  1  2001 file262144
+8 Jan  1  2001 file4096
+2 Jan  1  2001 file1024
+512 Jan  1  2001 file262144
+8 Jan  1  2001 file4096
+# LS_BLOCK_SIZE=1K
+1 Jan  1  2001 file1024
+256 Jan  1  2001 file262144
+4 Jan  1  2001 file4096
+1 Jan  1  2001 file1024
+256 Jan  1  2001 file262144
+4 Jan  1  2001 file4096
+1 Jan  1  2001 file1024
+256 Jan  1  2001 file262144
+4 Jan  1  2001 file4096
+# LS_BLOCK_SIZE=1KiB
 1 Jan  1  2001 file1024
 256 Jan  1  2001 file262144
 4 Jan  1  2001 file4096

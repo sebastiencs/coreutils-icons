@@ -3,7 +3,7 @@
 # With fileutils-4.1 and earlier, this test would fail for cp and mv.
 # With coreutils-6.9 and earlier, this test would fail for ln.
 
-# Copyright (C) 2001-2017 Free Software Foundation, Inc.
+# Copyright (C) 2001-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ cp mv ln
@@ -72,8 +72,8 @@ test -f c/g || fail=1
 # Test ln -f.
 
 rm -f a/f b/f c/f
-echo a > a/f || fail=1
-echo b > b/f || fail=1
+echo a > a/f || framework_failure_
+echo b > b/f || framework_failure_
 returns_ 1 ln -f a/f b/f c 2> /dev/null || fail=1
 # a/f and c/f must be linked
 test $(stat --format %i a/f) = $(stat --format %i c/f) || fail=1

@@ -1,7 +1,7 @@
 #!/bin/sh
 # ensure that ls --color works well when a colored name is wrapped
 
-# Copyright (C) 2009-2017 Free Software Foundation, Inc.
+# Copyright (C) 2009-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ ls
@@ -32,7 +32,7 @@ env TERM=xterm COLUMNS=80 LS_COLORS="*.foo=$color_code" TIME_STYLE=+T \
   ls -og --color=always $long_name > out || fail=1
 
 # Append a newline, to accommodate less-capable versions of sed.
-echo >> out || fail=1
+echo >> out || framework_failure_
 
 sed 's/.*T //' out > k && mv k out
 

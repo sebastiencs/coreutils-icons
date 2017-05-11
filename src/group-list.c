@@ -1,5 +1,5 @@
 /* group-list.c --Print a list of group IDs or names.
-   Copyright (C) 1989-2017 Free Software Foundation, Inc.
+   Copyright (C) 1989-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Arnold Robbins.
    Major rewrite by David MacKenzie, djm@gnu.ai.mit.edu.
@@ -59,7 +59,6 @@ print_group_list (const char *username,
 
   {
     gid_t *groups;
-    int i;
 
     int n_groups = xgetgroups (username, (pwd ? pwd->pw_gid : egid), &groups);
     if (n_groups < 0)
@@ -76,7 +75,7 @@ print_group_list (const char *username,
         return false;
       }
 
-    for (i = 0; i < n_groups; i++)
+    for (int i = 0; i < n_groups; i++)
       if (groups[i] != rgid && groups[i] != egid)
         {
           putchar (delim);

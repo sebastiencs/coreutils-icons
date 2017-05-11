@@ -1,7 +1,7 @@
 #!/bin/sh
 # Verify behavior of env.
 
-# Copyright (C) 2009-2017 Free Software Foundation, Inc.
+# Copyright (C) 2009-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,11 +14,11 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
-print_ver_ env
+print_ver_ env pwd
 
 # A simple shebang program to call "echo" from symlinks like "./-u" or "./--".
 echo "#!$abs_top_builddir/src/echo simple_echo" > simple_echo \
@@ -149,5 +149,18 @@ test "x$(sh -c '\c=d echo fail')" = xpass && #dash 0.5.4 fails so check first
 # catch unsetenv failure, broken through coreutils 8.0
 returns_ 125 env -u a=b true || fail=1
 returns_ 125 env -u '' true || fail=1
+
+# Verify changing directory.
+mkdir empty || framework_failure_
+returns_ 125 env --chdir=empty/nonexistent true || fail=1
+returns_ 125 env -C empty 2>out || fail=1
+printf '%s\n' \
+  'env: must specify command with --chdir (-C)' \
+  "Try 'env --help' for more information." > exp ||
+  framework_failure_
+compare exp out || fail=1
+exp=$(cd empty && env pwd) || framework_failure_
+got=$(env --chdir=empty pwd) || fail=1
+test "$exp" = "$got" || fail=1
 
 Exit $fail

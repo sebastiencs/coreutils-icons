@@ -1,7 +1,7 @@
 #!/bin/sh
 # Validate timeout basic operation
 
-# Copyright (C) 2008-2017 Free Software Foundation, Inc.
+# Copyright (C) 2008-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ timeout
@@ -56,5 +56,16 @@ returns_ 124 timeout -s0 -k1 .1 sleep 10 && fail=1
 out=$(sleep .1 & exec timeout .5 sh -c 'sleep 2; echo foo')
 status=$?
 test "$out" = "" && test $status = 124 || fail=1
+
+# Verify --verbose output
+cat > exp <<\EOF
+timeout: sending signal EXIT to command 'sleep'
+timeout: sending signal KILL to command 'sleep'
+EOF
+for opt in -v --verbose; do
+  timeout $opt -s0 -k .1 .1 sleep 10 2> errt
+  sed '/^Killed/d' < errt > err || framework_failure_
+  compare exp err || fail=1
+done
 
 Exit $fail

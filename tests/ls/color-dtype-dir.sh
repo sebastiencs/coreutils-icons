@@ -4,7 +4,7 @@
 # directories the same as the first one -- but only on a file system
 # with dirent.d_type support.
 
-# Copyright (C) 2006-2017 Free Software Foundation, Inc.
+# Copyright (C) 2006-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ ls
@@ -31,10 +31,10 @@ chmod o+t sticky || framework_failure_
 
 
 TERM=xterm ls --color=always > out || fail=1
-cat -A out > o1 || fail=1
-mv o1 out || fail=1
+cat -A out > o1 || framework_failure_
+mv o1 out || framework_failure_
 
-cat <<\EOF > exp || fail=1
+cat <<\EOF > exp || framework_failure_
 ^[[0m^[[01;34md^[[0m$
 ^[[34;42mother-writable^[[0m$
 out$
@@ -43,7 +43,7 @@ EOF
 
 compare exp out || fail=1
 
-rm exp
+rm exp || framework_failure_
 
 # Turn off colors for other-writable dirs and ensure
 # we fall back to the color for standard directories.
@@ -52,7 +52,7 @@ LS_COLORS="ow=:" ls --color=always > out || fail=1
 cat -A out > o1 || fail=1
 mv o1 out || fail=1
 
-cat <<\EOF > exp || fail=1
+cat <<\EOF > exp || framework_failure_
 ^[[0m^[[01;34md^[[0m$
 ^[[01;34mother-writable^[[0m$
 out$

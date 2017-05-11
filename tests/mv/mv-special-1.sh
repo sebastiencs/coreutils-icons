@@ -1,7 +1,7 @@
 #!/bin/sh
 # Test "mv" with special files.
 
-# Copyright (C) 1998-2017 Free Software Foundation, Inc.
+# Copyright (C) 1998-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ mv
@@ -48,7 +48,10 @@ test -d "$other_partition_tmpdir/$dir/a/b/c" || fail=1
 # so ignore chatter about when files are removed and copied rather than renamed.
 sed "
   /^removed /d
+  s,renamed ,,
+  s,copied ,,
   s,$other_partition_tmpdir,XXX,
+  s,created directory 'XXX/\(.*\)','\1' -> 'XXX/\1',
 " out | sort > out2
 
 cat <<EOF | sort > exp

@@ -1,5 +1,5 @@
 /* system-dependent definitions for coreutils
-   Copyright (C) 1989-2017 Free Software Foundation, Inc.
+   Copyright (C) 1989-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Include this file _after_ system headers if possible.  */
 
@@ -595,6 +595,7 @@ emit_size_note (void)
   fputs (_("\n\
 The SIZE argument is an integer and optional unit (example: 10K is 10*1024).\n\
 Units are K,M,G,T,P,E,Z,Y (powers of 1024) or KB,MB,... (powers of 1000).\n\
+Binary prefixes can be used, too: KiB=K, MiB=M, and so on.\n\
 "), stdout);
 }
 
@@ -656,13 +657,13 @@ emit_ancillary_info (char const *program)
   if (lc_messages && STRNCMP_LIT (lc_messages, "en_"))
     {
       /* TRANSLATORS: Replace LANG_CODE in this URL with your language code
-         <http://translationproject.org/team/LANG_CODE.html> to form one of
-         the URLs at http://translationproject.org/team/.  Otherwise, replace
+         <https://translationproject.org/team/LANG_CODE.html> to form one of
+         the URLs at https://translationproject.org/team/.  Otherwise, replace
          the entire URL with your translation team's email address.  */
-      printf (_("Report %s translation bugs to "
-                "<http://translationproject.org/team/>\n"), program);
+      fputs (_("Report any translation bugs to "
+               "<https://translationproject.org/team/>\n"), stdout);
     }
-  printf (_("Full documentation at: <%s%s>\n"),
+  printf (_("Full documentation <%s%s>\n"),
           PACKAGE_URL, program);
   printf (_("or available locally via: info '(coreutils) %s%s'\n"),
           node, node == program ? " invocation" : "");
@@ -781,3 +782,11 @@ is_ENOTSUP (int err)
   quotearg_style (shell_escape_always_quoting_style, arg)
 #define quoteaf_n(n, arg) \
   quotearg_n_style (n, shell_escape_always_quoting_style, arg)
+
+#ifndef FALLTHROUGH
+# if __GNUC__ < 7
+#  define FALLTHROUGH ((void) 0)
+# else
+#  define FALLTHROUGH __attribute__ ((__fallthrough__))
+# endif
+#endif

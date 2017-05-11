@@ -1,7 +1,7 @@
 #!/bin/sh
 # test nohup
 
-# Copyright (C) 2003-2017 Free Software Foundation, Inc.
+# Copyright (C) 2003-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ nohup
@@ -30,7 +30,7 @@ if test -t 1; then
     echo 'nohup: ignoring input and appending output to 'nohup.out'\'
   else
     echo 'nohup: appending output to 'nohup.out'\'
-  fi >exp || fail=1
+  fi >exp || framework_failure_
 else
   # Here it should not even exist.
   test -f nohup.out && fail=1
@@ -38,9 +38,9 @@ else
     echo 'nohup: ignoring input' >exp
   else
     rm -f exp
-  fi || fail=1
+  fi || framework_failure_
 fi
-echo 'stderr' >> exp || fail=1
+echo 'stderr' >> exp || framework_failure_
 
 compare exp err || fail=1
 rm -f nohup.out err exp
@@ -88,7 +88,7 @@ if test -t 1; then
   compare /dev/null nohup.out || fail=1
 fi
 
-cat <<\EOF > exp || fail=1
+cat <<\EOF > exp || framework_failure_
 nohup: appending output to 'nohup.out'
 nohup: cannot run command 'no-such-command': No such file or directory
 EOF
@@ -108,7 +108,7 @@ if test -t 1; then
   compare /dev/null nohup.out || fail=1
 fi
 
-cat <<\EOF > exp || fail=1
+cat <<\EOF > exp || framework_failure_
 nohup: appending output to 'nohup.out'
 nohup: cannot run command './k': Permission denied
 EOF

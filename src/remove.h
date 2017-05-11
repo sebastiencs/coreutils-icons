@@ -1,6 +1,6 @@
 /* Remove directory entries.
 
-   Copyright (C) 1998-2017 Free Software Foundation, Inc.
+   Copyright (C) 1998-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef REMOVE_H
 # define REMOVE_H
@@ -55,6 +55,10 @@ struct rm_options
   /* Pointer to the device and inode numbers of '/', when --recursive
      and preserving '/'.  Otherwise NULL.  */
   struct dev_ino *root_dev_ino;
+
+  /* If true, do not traverse into (or remove) any directory that is
+     the root of a file system.  I.e., a separate device.  */
+  bool preserve_all_root;
 
   /* If nonzero, stdin is a tty.  */
   bool stdin_tty;

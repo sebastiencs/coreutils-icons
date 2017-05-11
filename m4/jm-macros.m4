@@ -2,7 +2,7 @@
 
 dnl Misc type-related macros for coreutils.
 
-# Copyright (C) 1998-2017 Free Software Foundation, Inc.
+# Copyright (C) 1998-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@ dnl Misc type-related macros for coreutils.
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Written by Jim Meyering.
 
@@ -40,6 +40,10 @@ AC_DEFUN([coreutils_MACROS],
             [Define to the function xargmatch calls on failures.])
   AC_DEFINE([ARGMATCH_DIE_DECL], [void usage (int _e)],
             [Define to the declaration of the xargmatch failure function.])
+
+  # Ensure VLAs are not used.
+  # Note -Wvla is implicitly added by gl_MANYWARN_ALL_GCC
+  AC_DEFINE([GNULIB_NO_VLA], [1], [Define to 1 to disable use of VLAs])
 
   # used by shred
   AC_CHECK_FUNCS_ONCE([directio])
@@ -211,6 +215,7 @@ AC_DEFUN([gl_CHECK_ALL_HEADERS],
     paths.h
     priv.h
     stropts.h
+    sys/mtio.h
     sys/param.h
     sys/systeminfo.h
     syslog.h

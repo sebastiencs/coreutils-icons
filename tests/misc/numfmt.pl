@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # Basic tests for "numfmt".
 
-# Copyright (C) 2012-2017 Free Software Foundation, Inc.
+# Copyright (C) 2012-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use strict;
 
@@ -308,9 +308,9 @@ my @Tests =
              {EXIT=>1}, {ERR=>"$prog: invalid field range\n$try"}],
      ['field-range-err-12','--field 0-1 --to=si 10',
              {EXIT=>1}, {ERR=>"$prog: fields are numbered from 1\n$try"}],
-     ['field-range-err-13','--field '.$limits->{SIZE_MAX}.',22 --to=si 10',
+     ['field-range-err-13','--field '.$limits->{UINTMAX_MAX}.',22 --to=si 10',
              {EXIT=>1}, {ERR=>"$prog: field number " .
-                              "'".$limits->{SIZE_MAX}."' is too large\n$try"}],
+                            "'".$limits->{UINTMAX_MAX}."' is too large\n$try"}],
 
      # Auto-consume white-space, setup auto-padding
      ['whitespace-1', '--to=si --field 2 "A    500 B"', {OUT=>"A    500 B"}],

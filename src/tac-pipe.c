@@ -1,6 +1,6 @@
 /* tac from a pipe.
 
-   Copyright (C) 1997-2017 Free Software Foundation, Inc.
+   Copyright (C) 1997-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* FIXME */
 #include <assert.h>
@@ -127,8 +127,7 @@ buf_init_from_stdin (Buf *x, char eol_byte)
 static void
 buf_free (Buf *x)
 {
-  size_t i;
-  for (i = 0; i < x->n_bufs; i++)
+  for (size_t i = 0; i < x->n_bufs; i++)
     free (x->p[i].start);
   obstack_free (OBS, NULL);
 }
@@ -222,8 +221,7 @@ static void
 print_line (FILE *out_stream, const Buf *x,
             const Line_ptr *bol, const Line_ptr *bol_next)
 {
-  size_t i;
-  for (i = bol->i; i <= bol_next->i; i++)
+  for (size_t i = bol->i; i <= bol_next->i; i++)
     {
       char *a = (i == bol->i ? bol->ptr : x->p[i].start);
       char *b = (i == bol_next->i ? bol_next->ptr : ONE_PAST_END (x, i));

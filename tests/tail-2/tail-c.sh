@@ -1,7 +1,7 @@
 #!/bin/sh
 # exercise tail -c
 
-# Copyright 2014-2017 Free Software Foundation, Inc.
+# Copyright 2014-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,21 +14,25 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ tail
 
 # Make sure it works on funny files in /proc and /sys.
-
 for file in /proc/version /sys/kernel/profiling; do
   if test -r $file; then
     cp -f $file copy &&
-    tail -c -1 copy > exp1 || framework_failure_
+    tail -c -1 copy > exp || framework_failure_
 
-    tail -c -1 $file > out1 || fail=1
-    compare exp1 out1 || fail=1
+    tail -c -1 $file > out || fail=1
+    compare exp out || fail=1
   fi
 done
+
+# Make sure it works for pipes
+printf '123456' | tail -c3 > out || fail=1
+printf '456' > exp || framework_failure_
+compare exp out || fail=1
 
 Exit $fail

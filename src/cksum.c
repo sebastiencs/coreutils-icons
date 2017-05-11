@@ -1,5 +1,5 @@
 /* cksum -- calculate and print POSIX checksums and sizes of files
-   Copyright (C) 1992-2017 Free Software Foundation, Inc.
+   Copyright (C) 1992-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Q. Frank Xia, qx@math.columbia.edu.
    Cosmetic changes and reorganization by David MacKenzie, djm@gnu.ai.mit.edu.
@@ -67,10 +67,8 @@ static uint_fast32_t r[8];
 static void
 fill_r (void)
 {
-  int i;
-
   r[0] = GEN;
-  for (i = 1; i < 8; i++)
+  for (int i = 1; i < 8; i++)
     r[i] = (r[i - 1] << 1) ^ ((r[i - 1] & SBIT) ? GEN : 0);
 }
 
@@ -78,9 +76,8 @@ static uint_fast32_t
 crc_remainder (int m)
 {
   uint_fast32_t rem = 0;
-  int i;
 
-  for (i = 0; i < 8; i++)
+  for (int i = 0; i < 8; i++)
     if (BIT (i) & m)
       rem ^= r[i];
 
@@ -90,11 +87,9 @@ crc_remainder (int m)
 int
 main (void)
 {
-  int i;
-
   fill_r ();
   printf ("static uint_fast32_t const crctab[256] =\n{\n  0x00000000");
-  for (i = 0; i < 51; i++)
+  for (int i = 0; i < 51; i++)
     {
       printf (",\n  0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x",
               crc_remainder (i * 5 + 1), crc_remainder (i * 5 + 2),
@@ -107,7 +102,6 @@ main (void)
 
 #else /* !CRCTAB */
 
-# include <getopt.h>
 # include "long-options.h"
 # include "die.h"
 # include "error.h"
@@ -294,10 +288,8 @@ main (int argc, char **argv)
      so that processes running in parallel do not intersperse their output.  */
   setvbuf (stdout, NULL, _IOLBF, 0);
 
-  parse_long_options (argc, argv, PROGRAM_NAME, PACKAGE, Version,
-                      usage, AUTHORS, (char const *) NULL);
-  if (getopt_long (argc, argv, "", NULL, NULL) != -1)
-    usage (EXIT_FAILURE);
+  parse_gnu_standard_options_only (argc, argv, PROGRAM_NAME, PACKAGE, Version,
+                                   true, usage, AUTHORS, (char const *) NULL);
 
   have_read_stdin = false;
 

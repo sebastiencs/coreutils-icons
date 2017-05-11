@@ -1,5 +1,5 @@
 /* echo.c, derived from code echo.c in Bash.
-   Copyright (C) 1987-2017 Free Software Foundation, Inc.
+   Copyright (C) 1987-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,10 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 #include <stdio.h>
+#include <assert.h>
 #include <sys/types.h>
 #include "system.h"
 
@@ -34,35 +35,35 @@ enum { DEFAULT_ECHO_TO_XPG = false };
 void
 usage (int status)
 {
-  if (status != EXIT_SUCCESS)
-    emit_try_help ();
-  else
-    {
-      printf (_("\
+  /* STATUS should always be EXIT_SUCCESS (unlike in most other
+     utilities which would call emit_try_help otherwise).  */
+  assert (status == EXIT_SUCCESS);
+
+  printf (_("\
 Usage: %s [SHORT-OPTION]... [STRING]...\n\
   or:  %s LONG-OPTION\n\
 "), program_name, program_name);
-      fputs (_("\
+  fputs (_("\
 Echo the STRING(s) to standard output.\n\
 \n\
   -n             do not output the trailing newline\n\
 "), stdout);
-      fputs (_(DEFAULT_ECHO_TO_XPG
-               ? N_("\
+  fputs (_(DEFAULT_ECHO_TO_XPG
+           ? N_("\
   -e             enable interpretation of backslash escapes (default)\n\
   -E             disable interpretation of backslash escapes\n")
-               : N_("\
+           : N_("\
   -e             enable interpretation of backslash escapes\n\
   -E             disable interpretation of backslash escapes (default)\n")),
-             stdout);
-      fputs (HELP_OPTION_DESCRIPTION, stdout);
-      fputs (VERSION_OPTION_DESCRIPTION, stdout);
-      fputs (_("\
+         stdout);
+  fputs (HELP_OPTION_DESCRIPTION, stdout);
+  fputs (VERSION_OPTION_DESCRIPTION, stdout);
+  fputs (_("\
 \n\
 If -e is in effect, the following sequences are recognized:\n\
 \n\
 "), stdout);
-      fputs (_("\
+  fputs (_("\
   \\\\      backslash\n\
   \\a      alert (BEL)\n\
   \\b      backspace\n\
@@ -74,13 +75,12 @@ If -e is in effect, the following sequences are recognized:\n\
   \\t      horizontal tab\n\
   \\v      vertical tab\n\
 "), stdout);
-      fputs (_("\
+  fputs (_("\
   \\0NNN   byte with octal value NNN (1 to 3 digits)\n\
   \\xHH    byte with hexadecimal value HH (1 to 2 digits)\n\
 "), stdout);
-      printf (USAGE_BUILTIN_WARNING, PROGRAM_NAME);
-      emit_ancillary_info (PROGRAM_NAME);
-    }
+  printf (USAGE_BUILTIN_WARNING, PROGRAM_NAME);
+  emit_ancillary_info (PROGRAM_NAME);
   exit (status);
 }
 
@@ -108,8 +108,9 @@ int
 main (int argc, char **argv)
 {
   bool display_return = true;
+  bool posixly_correct = getenv ("POSIXLY_CORRECT");
   bool allow_options =
-    (! getenv ("POSIXLY_CORRECT")
+    (! posixly_correct
      || (! DEFAULT_ECHO_TO_XPG && 1 < argc && STREQ (argv[1], "-n")));
 
   /* System V machines already have a /bin/sh with a v9 behavior.
@@ -189,7 +190,7 @@ main (int argc, char **argv)
 
 just_echo:
 
-  if (do_v9)
+  if (do_v9 || posixly_correct)
     {
       while (argc > 0)
         {
@@ -231,7 +232,7 @@ just_echo:
                       if (! ('0' <= *s && *s <= '7'))
                         break;
                       c = *s++;
-                      /* Fall through.  */
+                      FALLTHROUGH;
                     case '1': case '2': case '3':
                     case '4': case '5': case '6': case '7':
                       c -= '0';

@@ -1,7 +1,7 @@
 #!/bin/sh
 # basic tests for printf
 
-# Copyright (C) 2002-2017 Free Software Foundation, Inc.
+# Copyright (C) 2002-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 prog='env printf'
 
@@ -60,9 +60,8 @@ $prog '5 % +d\n' 234  >> out || fail=1
 # coreutils-5.0.1, it would print six bytes: "6 \41\n".
 $prog '6 \41\n' | tr '\41' '!' >> out
 
-# Note that as of coreutils-5.0.1, printf with a format of '\0002x'
-# prints a NUL byte followed by the digit '2' and an 'x'.
-# By contrast bash's printf outputs the same thing as $(printf '\2x') does.
+# Note that as of coreutils-5.0.1, printf with a format of '\0002y'
+# prints a NUL byte followed by the digit '2' and a 'y'.
 $prog '7 \2y \02y \002y \0002y\n' |tr '\0\2' '*=' >> out
 
 $prog '8 %b %b %b %b\n' '\1y' '\01y' '\001y' '\0001y'|tr '\1' = >> out

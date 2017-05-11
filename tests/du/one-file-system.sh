@@ -1,7 +1,7 @@
 #!/bin/sh
 # Test for bugs in du's --one-file-system (-x) option.
 
-# Copyright (C) 2006-2017 Free Software Foundation, Inc.
+# Copyright (C) 2006-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ du
@@ -28,8 +28,8 @@ ln -s "$other_partition_tmpdir/x" d || framework_failure_
 # would not traverse into second and subsequent directories listed
 # on the command line.
 du -ax b y > t || fail=1
-sed 's/^[0-9][0-9]*	//' t > out
-cat <<\EOF > exp || fail=1
+sed 's/^[0-9][0-9]*	//' t > out || framework_failure_
+cat <<\EOF > exp || framework_failure_
 b/c
 b
 y/z
@@ -41,16 +41,16 @@ compare exp out || fail=1
 # "du -xL" reported a zero count for a file in a different file system,
 # instead of ignoring it.
 du -xL d > u || fail=1
-sed 's/^[0-9][0-9]*	//' u > out1
-echo d > exp1 || fail=1
+sed 's/^[0-9][0-9]*	//' u > out1 || framework_failure_
+echo d > exp1 || framework_failure_
 compare exp1 out1 || fail=1
 
 # With coreutils-8.15, "du -xs FILE" would print no output.
 touch f
 for opt in -x -xs; do
   du $opt f > u || fail=1
-  sed 's/^[0-9][0-9]*	//' u > out2
-  echo f > exp2 || fail=1
+  sed 's/^[0-9][0-9]*	//' u > out2 || framework_failure_
+  echo f > exp2 || framework_failure_
   compare exp2 out2 || fail=1
 done
 

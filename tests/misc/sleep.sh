@@ -1,7 +1,7 @@
 #!/bin/sh
 # Validate sleep parameters
 
-# Copyright (C) 2016-2017 Free Software Foundation, Inc.
+# Copyright (C) 2016-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,10 +14,10 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
-print_ver_ sleep
+print_ver_ sleep printf
 getlimits_
 
 # invalid timeouts
@@ -38,5 +38,18 @@ timeout 10 sleep 0x.002p1 || fail=1
 returns_ 124 timeout 0.1 sleep 1d 2h 3m 4s || fail=1
 returns_ 124 timeout 0.1 sleep inf || fail=1
 returns_ 124 timeout 0.1 sleep $LDBL_MAX || fail=1
+
+# Test locale decimal handling for printf, sleep, timeout
+: ${LOCALE_FR_UTF8=none}
+if test "$LOCALE_FR_UTF8" != "none"; then
+  f=$LOCALE_FR_UTF8
+  locale_decimal=$(LC_ALL=$f env printf '%0.3f' 0.001) || fail=1
+  locale_decimal=$(LC_ALL=$f env printf '%0.3f' "$locale_decimal") || fail=1
+  case "$locale_decimal" in
+    0?001)
+      LC_ALL=$f timeout 1$locale_decimal sleep "$locale_decimal" || fail=1 ;;
+    *) fail=1 ;;
+  esac
+fi
 
 Exit $fail

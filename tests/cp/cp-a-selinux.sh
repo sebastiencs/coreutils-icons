@@ -4,7 +4,7 @@
 # Check also locally if --preserve=context, -a and --preserve=all
 # does work
 
-# Copyright (C) 2007-2017 Free Software Foundation, Inc.
+# Copyright (C) 2007-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ cp
@@ -33,7 +33,7 @@ mls_enabled_ && ctx="$ctx:s0"
 
 # Check basic functionality - before check on fixed context mount
 touch c || framework_failure_
-chcon $ctx c || framework_failure_
+chcon $ctx c || skip_ "Failed to set context: $ctx"
 cp -a c d 2>err || framework_failure_
 cp --preserve=context c e || framework_failure_
 cp --preserve=all c f || framework_failure_

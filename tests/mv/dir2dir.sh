@@ -2,7 +2,7 @@
 # Ensure that mv prints the right diagnostic for a dir->dir move
 # where the destination directory is not empty.
 
-# Copyright (C) 2006-2017 Free Software Foundation, Inc.
+# Copyright (C) 2006-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ mv
@@ -33,7 +33,7 @@ mv b/t a 2> out && fail=1
 sed             's/: File exists/: Directory not empty/'<out>o1;mv o1 out
 sed 's/: Device or resource busy/: Directory not empty/'<out>o1;mv o1 out
 
-cat <<\EOF > exp || fail=1
+cat <<\EOF > exp || framework_failure_
 mv: cannot move 'b/t' to 'a/t': Directory not empty
 EOF
 

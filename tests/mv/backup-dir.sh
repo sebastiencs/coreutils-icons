@@ -1,7 +1,7 @@
 #!/bin/sh
 # Ensure "mv --verbose --backup" works the same for dirs and non-dirs.
 
-# Copyright (C) 2006-2017 Free Software Foundation, Inc.
+# Copyright (C) 2006-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ mv
@@ -25,8 +25,8 @@ touch X Y || framework_failure_
 
 # Before coreutils-6.2, the " (backup: 'B.~1~')" suffix was not printed.
 mv --verbose --backup=numbered -T A B > out || fail=1
-cat <<\EOF > exp || fail=1
-'A' -> 'B' (backup: 'B.~1~')
+cat <<\EOF > exp || framework_failure_
+renamed 'A' -> 'B' (backup: 'B.~1~')
 EOF
 
 compare exp out || fail=1

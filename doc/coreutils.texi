@@ -41,6 +41,7 @@
 * base32: (coreutils)base32 invocation.         Base32 encode/decode data.
 * base64: (coreutils)base64 invocation.         Base64 encode/decode data.
 * basename: (coreutils)basename invocation.     Strip directory and suffix.
+* basenc: (coreutils)basenc invocation.         Encoding/decoding of data.
 * cat: (coreutils)cat invocation.               Concatenate and write files.
 * chcon: (coreutils)chcon invocation.           Change SELinux CTX of files.
 * chgrp: (coreutils)chgrp invocation.           Change file groups.
@@ -144,7 +145,7 @@
 This manual documents version @value{VERSION} of the GNU core
 utilities, including the standard programs for text and file manipulation.
 
-Copyright @copyright{} 1994-2017 Free Software Foundation, Inc.
+Copyright @copyright{} 1994-2019 Free Software Foundation, Inc.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -184,7 +185,7 @@ Free Documentation License''.
 @menu
 * Introduction::                 Caveats, overview, and authors
 * Common options::               Common options
-* Output of entire files::       cat tac nl od base32 base64
+* Output of entire files::       cat tac nl od base32 base64 basenc
 * Formatting file contents::     fmt pr fold
 * Output of parts of files::     head tail split csplit
 * Summarizing files::            wc sum cksum b2sum md5sum sha1sum sha2
@@ -242,6 +243,7 @@ Output of entire files
 * od invocation::                Write files in octal or other formats
 * base32 invocation::            Transform data into printable data
 * base64 invocation::            Transform data into printable data
+* basenc invocation::            Transform data into printable data
 
 Formatting file contents
 
@@ -697,6 +699,8 @@ one of the following multiplicative suffixes:
 @samp{G}  => 1024*1024*1024 (GibiBytes)
 @end example
 and so on for @samp{T}, @samp{P}, @samp{E}, @samp{Z}, and @samp{Y}.
+Binary prefixes can be used, too: @samp{KiB}=@samp{K}, @samp{MiB}=@samp{M},
+and so on.
 @end macro
 
 @c FIXME: same as above, but no ``blocks'' line.
@@ -712,6 +716,8 @@ one of the following multiplicative suffixes:
 @samp{G}  => 1024*1024*1024 (GibiBytes)
 @end example
 and so on for @samp{T}, @samp{P}, @samp{E}, @samp{Z}, and @samp{Y}.
+Binary prefixes can be used, too: @samp{KiB}=@samp{K}, @samp{MiB}=@samp{M},
+and so on.
 @end macro
 
 @cindex common options
@@ -955,7 +961,7 @@ that are upward compatible with the
 @uref{http://www.bipm.org/en/publications/si-brochure/chapter3.html,
 SI prefixes}
 for decimal multiples and with the
-@uref{http://physics.nist.gov/cuu/Units/binary.html, ISO/IEC 80000-13
+@uref{https://physics.nist.gov/cuu/Units/binary.html, ISO/IEC 80000-13
 (formerly IEC 60027-2) prefixes} for binary multiples.
 
 With human-readable formats, output sizes are followed by a size letter
@@ -1079,10 +1085,9 @@ has positive and negative infinity, distinguishes positive from
 negative zero, and uses special values called NaNs to represent
 invalid computations such as dividing zero by itself.  For more
 information, please see David Goldberg's paper
-@uref{http://@/www.validlab.com/@/goldberg/@/paper.pdf, What Every
-Computer Scientist Should Know About Floating-Point Arithmetic}.
+@uref{https://@/docs.oracle.com/@/cd/@/E19957-01/@/806-3568/@/ncg_goldberg.html,
+What Every Computer Scientist Should Know About Floating-Point Arithmetic}.
 
-@vindex LC_NUMERIC
 Commands that accept floating point numbers as options, operands or
 input use the standard C functions @code{strtod} and @code{strtold} to
 convert from text to floating point numbers.  These floating point
@@ -1092,9 +1097,15 @@ case-insensitive @code{inf}, @code{infinity}, and @code{NaN}, although
 whether such values are useful depends on the command in question.
 Modern C implementations also accept hexadecimal floating point
 numbers such as @code{-0x.ep-3}, which stands for @minus{}14/16 times
-@math{2^-3}, which equals @minus{}0.109375.  The @env{LC_NUMERIC}
-locale determines the decimal-point character.  @xref{Parsing of
+@math{2^-3}, which equals @minus{}0.109375.  @xref{Parsing of
 Floats,,, libc, The GNU C Library Reference Manual}.
+
+@vindex LC_NUMERIC
+Normally the @env{LC_NUMERIC} locale determines the decimal-point
+character.  However, some commands' descriptions specify that they
+accept numbers in either the current or the C locale; for example,
+they treat @samp{3.14} like @samp{3,14} if the current locale uses
+comma as a decimal point.
 
 @node Signal specifications
 @section Signal specifications
@@ -1336,9 +1347,9 @@ The @option{--target-directory} (@option{-t}) option allows the @command{cp},
 conveniently with @command{xargs}.  For example, you can move the files
 from the current directory to a sibling directory, @code{d} like this:
 
-@smallexample
+@example
 ls | xargs mv -t ../d --
-@end smallexample
+@end example
 
 However, this doesn't move files whose names begin with @samp{.}.
 If you use the GNU @command{find} program, you can move those
@@ -1428,6 +1439,19 @@ a command line argument is a symbolic link to a directory, traverse it.
 In a recursive traversal, traverse every symbolic link to a directory
 that is encountered.
 @end macro
+
+@c Append the following warning to -L where appropriate (e.g. chown).
+@macro warnOptDerefWithRec
+
+Combining this dereferencing option with the @option{--recursive} option
+may create a security risk:
+During the traversal of the directory tree, an attacker may be able to
+introduce a symlink to an arbitrary target; when the tool reaches that,
+the operation will be performed on the target of that symlink,
+possibly allowing the attacker to escalate privileges.
+
+@end macro
+
 @choptL
 
 @macro choptP
@@ -1572,6 +1596,7 @@ in some way.
 * od invocation::               Write files in octal or other formats.
 * base32 invocation::           Transform data into printable data.
 * base64 invocation::           Transform data into printable data.
+* basenc invocation::           Transform data into printable data.
 @end menu
 
 @node cat invocation
@@ -1666,13 +1691,13 @@ if standard output is a terminal.
 
 Examples:
 
-@smallexample
+@example
 # Output f's contents, then standard input, then g's contents.
 cat f - g
 
 # Copy standard input to standard output.
 cat
-@end smallexample
+@end example
 
 
 @node tac invocation
@@ -1909,12 +1934,12 @@ Use @var{number} characters for line numbers (default 6).
 (@samp{-} means standard input), or standard input if none are given.
 Synopses:
 
-@smallexample
+@example
 od [@var{option}]@dots{} [@var{file}]@dots{}
 od [-abcdfilosx]@dots{} [@var{file}] [[+]@var{offset}[.][b]]
 od [@var{option}]@dots{} --traditional [@var{file}]@c
  [[+]@var{offset}[.][b] [[+]@var{label}[.][b]]]
-@end smallexample
+@end example
 
 Each line of output consists of the offset in the input, followed by
 groups of data from the file.  By default, @command{od} prints the offset in
@@ -2145,9 +2170,9 @@ Output as hexadecimal two-byte units.  Equivalent to @samp{-t x2}.
 Recognize the non-option label argument that traditional @command{od}
 accepted.  The following syntax:
 
-@smallexample
+@example
 od --traditional [@var{file}] [[+]@var{offset}[.][b] [[+]@var{label}[.][b]]]
-@end smallexample
+@end example
 
 @noindent
 can be used to specify at most one file and optional arguments
@@ -2186,10 +2211,10 @@ into (or from) base64 encoded form.  The base64 encoded form uses
 printable ASCII characters to represent binary data.
 Synopses:
 
-@smallexample
+@example
 base64 [@var{option}]@dots{} [@var{file}]
 base64 --decode [@var{option}]@dots{} [@var{file}]
-@end smallexample
+@end example
 
 The base64 encoding expands data to roughly 133% of the original.
 The base32 encoding expands data to roughly 160% of the original.
@@ -2234,6 +2259,132 @@ to permit distorted data to be decoded.
 @end table
 
 @exitstatus
+
+@node basenc invocation
+@section @command{basenc}: Transform data into printable data
+
+@pindex basenc
+@cindex base32 encoding
+
+@command{basenc} transforms data read from a file, or standard input,
+into (or from) various common encoding forms.  The encoded form uses
+printable ASCII characters to represent binary data.
+
+Synopses:
+
+@example
+basenc @var{encoding} [@var{option}]@dots{} [@var{file}]
+basenc @var{encoding} --decode [@var{option}]@dots{} [@var{file}]
+@end example
+
+The @var{encoding} argument is required. If @var{file} is omitted,
+reads input from stdin. The @option{-w/--wrap},@option{-i/--ignore-garbage},
+@option{-d/--decode} options of this command are precisely the same as
+for @command{base64}. @xref{base64 invocation}.
+
+
+Supported @var{encoding}s are:
+
+@table @samp
+
+@item --base64
+@opindex --base64
+Encode into (or decode from with @option{-d/--decode}) base64 form.
+The format conforms to
+@uref{https://tools.ietf.org/search/rfc4648#section-4, RFC 4648#4}.
+Equivalent to the @command{base64} command.
+
+@item --base64url
+@opindex --base64url
+Encode into (or decode from with @option{-d/--decode}) file-and-url-safe
+base64 form (using @samp{_} and @samp{-} instead of @samp{+} and @samp{/}).
+The format conforms to
+@uref{https://tools.ietf.org/search/rfc4648#section-5, RFC 4648#5}.
+
+@item --base32
+@opindex --base32
+Encode into (or decode from with @option{-d/--decode}) base32 form.
+The encoded data uses the @samp{ABCDEFGHIJKLMNOPQRSTUVWXYZ234567=} characters.
+The format conforms to
+@uref{https://tools.ietf.org/search/rfc4648#section-6, RFC 4648#6}.
+Equivalent to the @command{base32} command.
+
+@item --base32hex
+@opindex --base32hex
+Encode into (or decode from with @option{-d/--decode}) Extended Hex Alphabet
+base32 form. The encoded data uses the
+@samp{0123456789ABCDEFGHIJKLMNOPQRSTUV=} characters. The format conforms to
+@uref{https://tools.ietf.org/search/rfc4648#section-7, RFC 4648#7}.
+
+@item --base16
+@opindex --base16
+Encode into (or decode from with @option{-d/--decode}) base16 (hexadecimal)
+form. The encoded data uses the @samp{0123456789ABCDEF} characters. The format
+conforms to
+@uref{https://tools.ietf.org/search/rfc4648#section-8, RFC 4648#8}.
+
+@item --base2lsbf
+@opindex --base2lsbf
+Encode into (or decode from with @option{-d/--decode}) binary string form
+(@samp{0} and @samp{1}) with the @emph{least} significant bit of every byte
+first.
+
+@item --base2msbf
+@opindex --base2msbf
+Encode into (or decode from with @option{-d/--decode}) binary string form
+(@samp{0} and @samp{1}) with the @emph{most} significant bit of every byte
+first.
+
+@item --z85
+@opindex --z85
+Encode into (or decode from with @option{-d/--decode}) Z85 form
+(a modified Ascii85 form). The encoded data uses the
+@samp{0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU@
+VWXYZ.-:+=^!/*?&<>()[]@{@}@@%$#}.
+characters. The format conforms to
+@uref{https://rfc.zeromq.org/spec:32/Z85/, ZeroMQ spec:32/Z85}.
+
+When encoding with @option{--z85}, input length must be a multiple of 4;
+when decoding with @option{--z85}, input length must be a multiple of 5.
+
+@end table
+
+
+
+Encoding/decoding examples:
+
+@example
+$ printf '\376\117\202' | basenc --base64
+/k+C
+
+$ printf '\376\117\202' | basenc --base64url
+_k-C
+
+$ printf '\376\117\202' | basenc --base32
+7ZHYE===
+
+$ printf '\376\117\202' | basenc --base32hex
+VP7O4===
+
+$ printf '\376\117\202' | basenc --base16
+FE4F82
+
+$ printf '\376\117\202' | basenc --base2lsbf
+011111111111001001000001
+
+$ printf '\376\117\202' | basenc --base2msbf
+111111100100111110000010
+
+$ printf '\376\117\202\000' | basenc --z85
+@@.FaC
+
+$ printf 01010100 | basenc --base2msbf --decode
+T
+
+$ printf 01010100 | basenc --base2lsbf --decode
+*
+@end example
+
 
 
 @node Formatting file contents
@@ -3041,13 +3192,12 @@ never checks it again.
 Change the number of seconds to wait between iterations (the default is 1.0).
 During one iteration, every specified file is checked to see if it has
 changed size.
-Historical implementations of @command{tail} have required that
-@var{number} be an integer.  However, GNU @command{tail} accepts
-an arbitrary floating point number.  @xref{Floating point}.
 When @command{tail} uses inotify, this polling-related option
 is usually ignored.  However, if you also specify @option{--pid=@var{p}},
 @command{tail} checks whether process @var{p} is alive at least
 every @var{number} seconds.
+The @var{number} must be non-negative and can be a floating-point number
+in either the current or the C locale.  @xref{Floating point}.
 
 @item -v
 @itemx --verbose
@@ -3393,6 +3543,8 @@ including) the next line of the input file that contains a match for
 If it is given, the input up to (but not including) the
 matching line plus or minus @var{offset} is put into the output file,
 and the line after that begins the next section of input.
+Note lines within a negative offset of a regexp pattern
+are not matched in subsequent regexp patterns.
 
 @item %@var{regexp}%[@var{offset}]
 Like the previous type, except that it does not create an output
@@ -3410,7 +3562,8 @@ The output files' names consist of a prefix (@samp{xx} by default)
 followed by a suffix.  By default, the suffix is an ascending sequence
 of two-digit decimal numbers from @samp{00} to @samp{99}.  In any case,
 concatenating the output files in sorted order by file name produces the
-original input file.
+original input file, excluding portions skipped with a %@var{regexp}%
+pattern or the @option{--suppress-matched} option.
 
 By default, if @command{csplit} encounters an error or receives a hangup,
 interrupt, quit, or terminate signal, it removes any output files
@@ -3852,8 +4005,8 @@ a space, a flag indicating binary or text input mode, and the file name.
 Binary mode is indicated with @samp{*}, text mode with @samp{ } (space).
 Binary mode is the default on systems where it's significant,
 otherwise text mode is the default.
-If @var{file} contains a backslash or newline, the
-line is started with a backslash, and each problematic character in
+Without @option{--zero}, if @var{file} contains a backslash or newline,
+the line is started with a backslash, and each problematic character in
 the file name is escaped with a backslash, making the output
 unambiguous even in the presence of arbitrary file names.
 If @var{file} is omitted or specified as @samp{-}, standard input is read.
@@ -3886,6 +4039,7 @@ Three input formats are supported.  Either the default output
 format described above, the @option{--tag} output format,
 or the BSD reversed mode format which is similar to the default mode,
 but doesn't use a character to distinguish binary and text modes.
+Output with @option{--zero} enabled is not supported by @option{--check}.
 @sp 1
 For each such line, @command{md5sum} reads the named file and computes its
 MD5 checksum.  Then, if the computed message digest does not match the
@@ -3934,9 +4088,9 @@ indicating there was a failure.
 @opindex --tag
 @cindex BSD output
 Output BSD style checksums, which indicate the checksum algorithm used.
-As a GNU extension, file names with problematic characters
-are escaped as described above, with the same escaping indicator of @samp{\}
-at the start of the line, being used.
+As a GNU extension, if @option{--zero} is not used, file names with problematic
+characters are escaped as described above, with the same escaping indicator of
+@samp{\} at the start of the line, being used.
 The @option{--tag} option implies binary mode, and is disallowed with
 @option{--text} mode as supporting that would unnecessarily complicate
 the output format, while providing little benefit.
@@ -3969,6 +4123,8 @@ When verifying checksums,
 if one or more input line is invalid,
 exit nonzero after all warnings have been issued.
 
+@optZero
+Also file name escaping is not used.
 @end table
 
 @exitstatus
@@ -4716,9 +4872,9 @@ sorts is stable.
 @item
 Generate a tags file in case-insensitive sorted order.
 
-@smallexample
+@example
 find src -type f -print0 | sort -z -f | xargs -0 etags --append
-@end smallexample
+@end example
 
 The use of @option{-print0}, @option{-z}, and @option{-0} in this case means
 that file names that contain blanks or other special characters are
@@ -5580,10 +5736,10 @@ generating output suitable for @command{nroff}, @command{troff} or @TeX{}.
 Choose an output format suitable for @command{nroff} or @command{troff}
 processing.  Each output line will look like:
 
-@smallexample
+@example
 .xx "@var{tail}" "@var{before}" "@var{keyword_and_after}"@c
  "@var{head}" "@var{ref}"
-@end smallexample
+@end example
 
 so it will be possible to write a @samp{.xx} roff macro to take care of
 the output typesetting.  This is the default output format when GNU
@@ -5603,10 +5759,10 @@ so it will be correctly processed by @command{nroff} or @command{troff}.
 Choose an output format suitable for @TeX{} processing.  Each output
 line will look like:
 
-@smallexample
+@example
 \xx @{@var{tail}@}@{@var{before}@}@{@var{keyword}@}@c
 @{@var{after}@}@{@var{head}@}@{@var{ref}@}
-@end smallexample
+@end example
 
 @noindent
 so it will be possible to write a @code{\xx} definition to take care of
@@ -6131,7 +6287,7 @@ f Z
 
 $ join file1 file2
 a 1 X
-e 5 Z
+e 5 Y
 @end group
 @end example
 
@@ -6380,7 +6536,7 @@ matches the default operation of sort:
 @group
 $ sort file1 > file1.sorted
 $ sort file2 > file2.sorted
-$ join -t'' file1.sorted file2.sorted > file3
+$ join -t '' file1.sorted file2.sorted > file3
 @end group
 @end example
 
@@ -6471,7 +6627,7 @@ see note below regarding @code{-o auto}.
 @item
 @example
 $ join -v 1 file1 file2
-b 1
+b 2
 @end example
 @tab
 unpaired lines from the first file
@@ -6536,6 +6692,7 @@ $ cat file2
 a a2
 c c2
 b b2
+
 $ join file1 file2
 a a1 a2
 c c1 c2
@@ -6604,22 +6761,22 @@ perform the equivalent of set operations on files:
 @item @code{sort file1 file2 | uniq -u}
 @tab Symmetric Difference of unsorted files
 
-@item @code{join -t'' -a1 -a2 file1 file2}
+@item @code{join -t '' -a1 -a2 file1 file2}
 @tab Union of sorted files
 
-@item @code{join -t'' file1 file2}
+@item @code{join -t '' file1 file2}
 @tab Intersection of sorted files
 
-@item @code{join -t'' -v2 file1 file2}
+@item @code{join -t '' -v2 file1 file2}
 @tab Difference of sorted files
 
-@item @code{join -t'' -v1 -v2 file1 file2}
+@item @code{join -t '' -v1 -v2 file1 file2}
 @tab Symmetric Difference of sorted files
 
 @end multitable
 
 All examples above operate on entire lines and not on specific fields:
-@command{sort} without @option{-k} and @command{join -t''} both consider
+@command{sort} without @option{-k} and @command{join -t ''} both consider
 entire lines as the key.
 
 
@@ -7319,9 +7476,9 @@ in the shell, an initial @samp{.} in a file name does not match a
 wildcard at the start of @var{pattern}.  Sometimes it is useful
 to give this option several times.  For example,
 
-@smallexample
+@example
 $ ls --ignore='.??*' --ignore='.[^.]' --ignore='#*'
-@end smallexample
+@end example
 
 The first option ignores names of length 3 or more that start with @samp{.},
 the second ignores all two-character names that start with @samp{.}
@@ -7857,9 +8014,8 @@ may be omitted, or one of:
 @end itemize
 Specifying @option{--color} and no @var{when} is equivalent to
 @option{--color=always}.
-Piping a colorized listing through a pager like @command{more} or
-@command{less} usually produces unreadable results.  However, using
-@code{more -f} does seem to work.
+If piping a colorized listing through a pager like @command{less},
+use the @option{-R} option to pass the color codes to the terminal.
 
 @vindex LS_COLORS
 @vindex SHELL @r{environment variable, and color}
@@ -7905,6 +8061,27 @@ command line unless the @option{--dereference-command-line} (@option{-H}),
 Append a character to each file name indicating the file type.  This is
 like @option{-F}, except that executables are not marked.
 
+@item --hyperlink [=@var{when}]
+@opindex --hyperlink
+@cindex hyperlink, linking to files
+Output codes recognized by some terminals to link
+to files using the @samp{file://} URI format.
+@var{when} may be omitted, or one of:
+@itemize @bullet
+@item none
+@vindex none @r{hyperlink option}
+- Do not use hyperlinks at all.  This is the default.
+@item auto
+@vindex auto @r{hyperlink option}
+@cindex terminal, using hyperlink iff
+- Only use hyperlinks if standard output is a terminal.
+@item always
+@vindex always @r{hyperlink option}
+- Always use hyperlinks.
+@end itemize
+Specifying @option{--hyperlink} and no @var{when} is equivalent to
+@option{--hyperlink=always}.
+
 @item --indicator-style=@var{word}
 @opindex --indicator-style
 Append a character indicator with style @var{word} to entry names,
@@ -7932,9 +8109,11 @@ Append @samp{*} for executable regular files, otherwise behave as for
 @opindex --kibibytes
 Set the default block size to its normal value of 1024 bytes,
 overriding any contrary specification in environment variables
-(@pxref{Block size}).  This option is in turn overridden by the
-@option{--block-size}, @option{-h} or @option{--human-readable}, and
-@option{--si} options.
+(@pxref{Block size}).  If @option{--block-size}, @option{-h},
+@option{--human-readable}, or @option{--si} options are used,
+they take precedence over @option{-k} or @option{--kibibytes}
+even if @option{-k} or @option{--kibibytes} is placed after
+the other options.
 
 The @option{-k} or @option{--kibibytes} option affects the
 per-directory block count written by the @option{-l} and similar
@@ -8500,8 +8679,10 @@ Equivalent to @option{--no-dereference --preserve=links}.
 @opindex --force
 When copying without this option and an existing destination file cannot
 be opened for writing, the copy fails.  However, with @option{--force},
-when a destination file cannot be opened, @command{cp} then removes it and
-tries to open it again.  When this option is combined with
+when a destination file cannot be opened, @command{cp} then
+tries to recreate the file by first removing it.  Note @option{--force}
+alone will not remove dangling symlinks.
+When this option is combined with
 @option{--link} (@option{-l}) or @option{--symbolic-link}
 (@option{-s}), the destination link is replaced, and unless
 @option{--backup} (@option{-b}) is also given there is no brief
@@ -8548,7 +8729,8 @@ a regular file in the destination tree.
 @itemx --no-clobber
 @opindex -n
 @opindex --no-clobber
-Do not overwrite an existing file.  The @option{-n} option overrides a previous
+Do not overwrite an existing file; silently do nothing instead.
+This option overrides a previous
 @option{-i} option.  This option is mutually exclusive with @option{-b} or
 @option{--backup} option.
 
@@ -8605,11 +8787,11 @@ Then the @option{--preserve=links} option also implied by @option{-a}
 will preserve the perceived hard link.
 
 Here is a similar example that exercises @command{cp}'s @option{-L} option:
-@smallexample
+@example
 $ mkdir b c; (cd b; : > a; ln -s a b); cp -aL b c; ls -i1 c/b
 74163295 a
 74163295 b
-@end smallexample
+@end example
 
 @item context
 Preserve SELinux security context of the file, or fail with full diagnostics.
@@ -8704,6 +8886,9 @@ then report the failure for each file and exit with a failure status.
 @item auto
 If the copy-on-write operation is not supported then fall back
 to the standard copy behavior.
+
+@item never
+Disable copy-on-write operation and use the standard copy behavior.
 @end table
 
 This option is overridden by the @option{--link}, @option{--symbolic-link}
@@ -8788,8 +8973,10 @@ the comparison is to the source timestamp truncated to the
 resolutions of the destination file system and of the system calls
 used to update timestamps; this avoids duplicate work if several
 @samp{cp -pu} commands are executed with the same source and destination.
-If @option{--preserve=links} is also specified (like with @samp{cp -au}
-for example), that will take precedence.  Consequently, depending on the
+This option is ignored if the @option{-n} or @option{--no-clobber}
+option is also specified.
+Also, if @option{--preserve=links} is also specified (like with @samp{cp -au}
+for example), that will take precedence; consequently, depending on the
 order that files are processed from the source, newer files in the destination
 may be replaced, to mirror hard links in the source.
 
@@ -8886,7 +9073,7 @@ The default is 512 bytes.
 Set both input and output block sizes to @var{bytes}.
 This makes @command{dd} read and write @var{bytes} per block,
 overriding any @samp{ibs} and @samp{obs} settings.
-In addition, if no data-transforming @option{conv} option is specified,
+In addition, if no data-transforming @option{conv} operand is specified,
 input is copied to the output as soon as it's read,
 even if it is smaller than the block size.
 
@@ -8927,10 +9114,9 @@ input read operations.
 
 @item status=@var{level}
 @opindex status
-Transfer information is normally output to stderr upon
-receipt of the @samp{INFO} signal or when @command{dd} exits.
-Specifying @var{level} will adjust the amount of information printed,
-with the last @var{level} specified taking precedence.
+Specify the amount of information printed.
+If this operand is given multiple times, the last one takes precedence.
+The @var{level} value can be one of the following:
 
 @table @samp
 
@@ -8953,6 +9139,23 @@ can be delayed when waiting on I/O.
 
 @end table
 
+Transfer information is normally output to stderr upon
+receipt of the @samp{INFO} signal or when @command{dd} exits,
+and defaults to the following form in the C locale:
+
+@example
+7287+1 records in
+116608+0 records out
+59703296 bytes (60 MB, 57 MiB) copied, 0.0427974 s, 1.4 GB/s
+@end example
+
+The notation @samp{@var{w}+@var{p}} stands for @var{w} whole blocks
+and @var{p} partial blocks.  A partial block occurs when a read or
+write operation succeeds but transfers less data than the block size.
+An additional line like @samp{1 truncated record} or @samp{10
+truncated records} is output after the @samp{records out} line if
+@samp{conv=block} processing truncated one or more input records.
+
 @item conv=@var{conversion}[,@var{conversion}]@dots{}
 @opindex conv
 Convert the file as specified by the @var{conversion} argument(s).
@@ -8967,14 +9170,14 @@ Conversions:
 Convert EBCDIC to ASCII,
 using the conversion table specified by POSIX@.
 This provides a 1:1 translation for all 256 bytes.
-This option implies @samp{conv=unblock}; input is converted to
+This implies @samp{conv=unblock}; input is converted to
 ASCII before trailing spaces are deleted.
 
 @item ebcdic
 @opindex ebcdic@r{, converting to}
 Convert ASCII to EBCDIC@.
 This is the inverse of the @samp{ascii} conversion.
-This option implies @samp{conv=block}; trailing spaces are added
+This implies @samp{conv=block}; trailing spaces are added
 before being converted to EBCDIC@.
 
 @item ibm
@@ -8985,13 +9188,14 @@ This is not a 1:1 translation, but reflects common historical practice
 for @samp{~}, @samp{[}, and @samp{]}.
 
 The @samp{ascii}, @samp{ebcdic}, and @samp{ibm} conversions are
-mutually exclusive.  If you use any of these options, you should also
-use the @samp{cbs=} option.
+mutually exclusive.  If you use any of these conversions, you should also
+use the @samp{cbs=} operand.
 
 @item block
 @opindex block @r{(space-padding)}
 For each line in the input, output @samp{cbs} bytes, replacing the
-input newline with a space and padding with spaces as necessary.
+input newline with a space and truncating or padding input lines with
+spaces as necessary.
 
 @item unblock
 @opindex unblock
@@ -9015,13 +9219,13 @@ The @samp{lcase} and @samp{ucase} conversions are mutually exclusive.
 Try to seek rather than write NUL output blocks.
 On a file system that supports sparse files, this will create
 sparse output when extending the output file.
-Be careful when using this option in conjunction with
+Be careful when using this conversion in conjunction with
 @samp{conv=notrunc} or @samp{oflag=append}.
 With @samp{conv=notrunc}, existing data in the output file
 corresponding to NUL blocks from the input, will be untouched.
 With @samp{oflag=append} the seeks performed will be ineffective.
 Similarly, when the output is a device rather than a file,
-NUL input blocks are not copied, and therefore this option
+NUL input blocks are not copied, and therefore this conversion
 is most useful with virtual or pre zeroed devices.
 
 @item swab
@@ -9154,7 +9358,7 @@ failure to discard the cache is diagnosed
 and reflected in the exit status.
 
 Note data that is not already persisted to storage will not
-be discarded from cache, so note the use of the ``sync'' options
+be discarded from cache, so note the use of the @samp{sync} conversions
 in the examples below, which are used to maximize the
 effectiveness of the @samp{nocache} flag.
 
@@ -9167,7 +9371,9 @@ dd if=ifile iflag=nocache count=0
 # Ensure drop cache for the whole file
 dd of=ofile oflag=nocache conv=notrunc,fdatasync count=0
 
-# Drop cache for part of file
+# Advise to drop cache for part of file
+# Note the kernel will only consider complete and
+# already persisted pages.
 dd if=ifile iflag=nocache skip=10 count=10 of=/dev/null
 
 # Stream data using just the read-ahead cache.
@@ -9193,7 +9399,7 @@ idea to test it on your files before relying on it.
 @cindex controlling terminal
 Do not assign the file to be a controlling terminal for @command{dd}.
 This has no effect when the file is not a terminal.
-On many hosts (e.g., GNU/Linux hosts), this option has no effect
+On many hosts (e.g., GNU/Linux hosts), this flag has no effect
 at all.
 
 @item nofollow
@@ -9209,13 +9415,13 @@ Fail if the file has multiple hard links.
 @item binary
 @opindex binary
 @cindex binary I/O
-Use binary I/O@.  This option has an effect only on nonstandard
+Use binary I/O@.  This flag has an effect only on nonstandard
 platforms that distinguish binary from text I/O.
 
 @item text
 @opindex text
 @cindex text I/O
-Use text I/O@.  Like @samp{binary}, this option has no effect on
+Use text I/O@.  Like @samp{binary}, this flag has no effect on
 standard platforms.
 
 @item fullblock
@@ -9301,7 +9507,7 @@ disk finally dies, e.g.
 However, in some cases such a tool is not available or the administrator
 feels more comfortable with the handling of @command{dd}.
 As a simple rescue method, call @command{dd} as shown in the following
-example: the options @samp{conv=noerror,sync} are used to continue
+example: the operand @samp{conv=noerror,sync} is used to continue
 after read errors and to pad out bad reads with NULs, while
 @samp{iflag=fullblock} caters for short reads (which traditionally never
 occur on disk based devices):
@@ -9343,7 +9549,7 @@ The above script will output in the following format:
 5000000000 bytes (5.0 GB, 4.7 GiB) copied, 1.44433 s, 3.5 GB/s
 @end example
 
-The @samp{status=progress} option periodically updates the last line
+The @samp{status=progress} operand periodically updates the last line
 of the transfer statistics above.
 
 @vindex POSIXLY_CORRECT
@@ -9634,7 +9840,7 @@ If the response is not affirmative, the file is skipped.
 @opindex -n
 @opindex --no-clobber
 @cindex prompts, omitting
-Do not overwrite an existing file.
+Do not overwrite an existing file; silently do nothing instead.
 @mvOptsIfn
 This option is mutually exclusive with @option{-b} or @option{--backup} option.
 
@@ -9650,6 +9856,8 @@ source timestamp truncated to the resolutions of the destination file
 system and of the system calls used to update timestamps; this avoids
 duplicate work if several @samp{mv -u} commands are executed with the
 same source and destination.
+This option is ignored if the @option{-n} or @option{--no-clobber}
+option is also specified.
 
 @item -v
 @itemx --verbose
@@ -9770,7 +9978,6 @@ removal is requested.  Equivalent to @option{-I}.
 @cindex one file system, restricting @command{rm} to
 When removing a hierarchy recursively, skip any directory that is on a
 file system different from that of the corresponding command line argument.
-
 @cindex bind mount
 This option is useful when removing a build ``chroot'' hierarchy,
 which normally contains no valuable data.  However, it is not uncommon
@@ -9783,14 +9990,18 @@ Use the @option{--one-file-system} option, and it will
 warn about and skip directories on other file systems.
 Of course, this will not save your @file{/home} if it and your
 chroot happen to be on the same file system.
+See also @option{--preserve-root=all} to protect command line arguments
+themselves.
 
-@item --preserve-root
+@item --preserve-root [=all]
 @opindex --preserve-root
 @cindex root directory, disallow recursive destruction
 Fail upon any attempt to remove the root directory, @file{/},
 when used with the @option{--recursive} option.
 This is the default behavior.
 @xref{Treating / specially}.
+When @samp{all} is specified, reject any command line argument
+that is not on the same file system as its parent.
 
 @item --no-preserve-root
 @opindex --no-preserve-root
@@ -9935,8 +10146,8 @@ destroy it.
 @command{shred} makes no attempt to detect or report this problem, just as
 it makes no attempt to do anything about backups.  However, since it is
 more reliable to shred devices than files, @command{shred} by default does
-not truncate or remove the output file.  This default is more suitable
-for devices, which typically cannot be truncated and should not be
+not deallocate or remove the output file.  This default is more suitable
+for devices, which typically cannot be deallocated and should not be
 removed.
 
 Finally, consider the risk of backups and mirrors.
@@ -9993,7 +10204,7 @@ the whole file.  @var{bytes} can be followed by a size specification like
 @opindex --remove=wipe
 @opindex --remove=wipesync
 @cindex removing files after shredding
-After shredding a file, truncate it (if possible) and then remove it.
+After shredding a file, deallocate it (if possible) and then remove it.
 If a file has multiple links, only the named links will be removed.
 Often the file name is less sensitive than the file data, in which case
 the optional @var{how} parameter, supported with the long form option,
@@ -10341,10 +10552,10 @@ Make symbolic links relative to the link location.
 
 Example:
 
-@smallexample
+@example
 ln -srv /a/file /tmp
 '/tmp/file' -> '../a/file'
-@end smallexample
+@end example
 
 Relative symbolic links are generated based on their canonicalized
 containing directory, and canonicalized targets.  I.e., all symbolic
@@ -10399,7 +10610,7 @@ if @code{link} follows symbolic links (such as on BSD).
 
 Examples:
 
-@smallexample
+@example
 Bad Example:
 
 # Create link ../a pointing to a in that directory.
@@ -10423,7 +10634,7 @@ Better Example:
 # work across networked file systems.
 ln -s afile anotherfile
 ln -s ../adir/afile yetanotherfile
-@end smallexample
+@end example
 
 
 @node mkdir invocation
@@ -10624,7 +10835,7 @@ Set the mode of created files to @var{mode}, which is symbolic as in
 @cindex displaying value of a symbolic link
 @cindex canonical file name
 @cindex canonicalize a file name
-@findex realpath
+@cindex realpath
 
 @command{readlink} may work in one of two supported modes:
 
@@ -10939,9 +11150,9 @@ it narrows considerably the window of potential abuse.
 For example, to reflect a user ID numbering change for one user's files
 without an option like this, @code{root} might run
 
-@smallexample
+@example
 find / -owner OLDUSER -print0 | xargs -0 chown -h NEWUSER
-@end smallexample
+@end example
 
 But that is dangerous because the interval between when the @command{find}
 tests the existing file's owner and when the @command{chown} is actually run
@@ -10966,7 +11177,8 @@ chown -h -R --from=OLDUSER NEWUSER /
 @cindex symbolic links, changing owner
 @findex lchown
 Do not act on symbolic links themselves but rather on what they point to.
-This is the default.
+This is the default when not operating recursively.
+@warnOptDerefWithRec
 
 @item -h
 @itemx --no-dereference
@@ -11023,6 +11235,7 @@ Recursively change ownership of directories and their contents.
 @xref{Traversing symlinks}.
 
 @choptL
+@warnOptDerefWithRec
 @xref{Traversing symlinks}.
 
 @choptP
@@ -11034,7 +11247,7 @@ Recursively change ownership of directories and their contents.
 
 Examples:
 
-@smallexample
+@example
 # Change the owner of /u to "root".
 chown root /u
 
@@ -11043,7 +11256,7 @@ chown root:staff /u
 
 # Change the owner of /u and subfiles to "root".
 chown -hR root /u
-@end smallexample
+@end example
 
 
 @node chgrp invocation
@@ -11096,7 +11309,8 @@ changed.
 @cindex symbolic links, changing owner
 @findex lchown
 Do not act on symbolic links themselves but rather on what they point to.
-This is the default.
+This is the default when not operating recursively.
+@warnOptDerefWithRec
 
 @item -h
 @itemx --no-dereference
@@ -11152,6 +11366,7 @@ Recursively change the group ownership of directories and their contents.
 @xref{Traversing symlinks}.
 
 @choptL
+@warnOptDerefWithRec
 @xref{Traversing symlinks}.
 
 @choptP
@@ -11163,13 +11378,13 @@ Recursively change the group ownership of directories and their contents.
 
 Examples:
 
-@smallexample
+@example
 # Change the group of /u to "staff".
 chgrp staff /u
 
 # Change the group of /u and subfiles to "staff".
 chgrp -hR staff /u
-@end smallexample
+@end example
 
 
 @node chmod invocation
@@ -11195,6 +11410,10 @@ never used.  However, for each symbolic link listed on the command
 line, @command{chmod} changes the permissions of the pointed-to file.
 In contrast, @command{chmod} ignores symbolic links encountered during
 recursive directory traversals.
+
+Only a process whose effective user ID matches the user ID of the file,
+or a process with appropriate privileges, is permitted to change the
+file mode bits of a file.
 
 A successful use of @command{chmod} clears the set-group-ID bit of a
 regular file if the file's group ID does not match the user's
@@ -11270,6 +11489,24 @@ Recursively change permissions of directories and their contents.
 @end table
 
 @exitstatus
+
+Examples:
+
+@smallexample
+# Change file permissions of FOO to be world readable
+# and user writable, with no other permissions.
+chmod 644 foo
+chmod a=r,u+w foo
+
+# Add user and group execute permissions to FOO.
+chmod +110 file
+chmod ug+x file
+
+# Set file permissions of DIR and subsidiary files to
+# be the umask default, assuming execute permissions for
+# directories and for files already executable.
+chmod -R a=,+rwX dir
+@end smallexample
 
 
 @node touch invocation
@@ -12224,7 +12461,7 @@ numbers unambiguously octal, you can use @samp{%#03a}.
 
 The @samp{%N} format can be set with the environment variable
 @env{QUOTING_STYLE}@.  If that environment variable is not set,
-the default value is @samp{shell-escape}.  Valid quoting styles are:
+the default value is @samp{shell-escape-always}.  Valid quoting styles are:
 @quotingStyles
 
 The @samp{%t} and @samp{%T} formats operate on the st_rdev member of
@@ -12524,7 +12761,7 @@ If the @env{POSIXLY_CORRECT} environment variable is set, then when
 @command{echo}'s first argument is not @option{-n} it outputs
 option-like arguments instead of treating them as options.  For
 example, @code{echo -ne hello} outputs @samp{-ne hello} instead of
-plain @samp{hello}.
+plain @samp{hello}.  Also backslash escapes are always enabled.
 
 POSIX does not require support for any options, and says
 that the behavior of @command{echo} is implementation-defined if any
@@ -12616,11 +12853,11 @@ warning is printed.  For example, @samp{printf "%d" "'a"} outputs
 @end itemize
 
 @vindex LC_NUMERIC
-A floating-point argument must use a period before any fractional
-digits, but is printed according to the @env{LC_NUMERIC} category of the
-current locale.  For example, in a locale whose radix character is a
-comma, the command @samp{printf %g 3.14} outputs @samp{3,14} whereas
-the command @samp{printf %g 3,14} is an error.
+A floating point argument is interpreted according to
+the @env{LC_NUMERIC} category of either the current or the C locale,
+and is printed according to the current locale.
+For example, in a locale whose decimal point character is a comma,
+the command @samp{printf '%g %g' 2,5 2.5} outputs @samp{2,5 2,5}.
 @xref{Floating point}.
 
 @kindex \@var{ooo}
@@ -12687,13 +12924,13 @@ use GNU recode 3.5c (or newer) to convert strings to this encoding.  Here
 is how to convert a piece of text into a shell script which will output
 this text in a locale-independent way:
 
-@smallexample
+@example
 $ LC_CTYPE=zh_CN.big5 /usr/local/bin/printf \
     '\u4e2d\u6587\n' > sample.txt
 $ recode BIG5..JAVA < sample.txt \
     | sed -e "s|^|/usr/local/bin/printf '|" -e "s|$|\\\\n'|" \
     > sample.sh
-@end smallexample
+@end example
 
 @exitstatus
 
@@ -13014,6 +13251,12 @@ True if @var{file1} is older (according to modification date) than
 @cindex hard link check
 True if @var{file1} and @var{file2} have the same device and inode
 numbers, i.e., if they are hard links to each other.
+
+@item -N @var{file}
+@opindex -N
+@cindex mtime-greater-atime file check
+True if @var{file} exists and has been modified (mtime) since it was
+last read (atime).
 
 @end table
 
@@ -13728,7 +13971,7 @@ This option implies the @option{-a} option.
 
 Examples:
 
-@smallexample
+@example
 # Output "sort".
 basename /usr/bin/sort
 
@@ -13740,7 +13983,7 @@ basename -s .h include/stdio.h
 
 # Output "stdio" followed by "stdlib"
 basename -a -s .h include/stdio.h include/stdlib.h
-@end smallexample
+@end example
 
 
 @node dirname invocation
@@ -13783,7 +14026,7 @@ The program accepts the following option.  Also see @ref{Common options}.
 
 Examples:
 
-@smallexample
+@example
 # Output "/usr/bin".
 dirname /usr/bin/sort
 dirname /usr/bin//.//
@@ -13793,7 +14036,7 @@ dirname dir1/str dir2/str
 
 # Output ".".
 dirname stdio.h
-@end smallexample
+@end example
 
 
 @node pathchk invocation
@@ -14113,33 +14356,22 @@ This is the default mode of operation.
 @opindex --quiet
 Suppress diagnostic messages for specified file names.
 
-@item --relative-to=@var{file}
+@item --relative-to=@var{dir}
 @opindex --relative-to
 @cindex relpath
-Print the resolved file names relative to the specified file.
+Print the resolved file names relative to the specified directory.
 Note this option honors the @option{-m} and @option{-e} options
 pertaining to file existence.
 
-@item --relative-base=@var{base}
+@item --relative-base=@var{dir}
 @opindex --relative-base
-This option is valid when used with @option{--relative-to}, and will restrict
-the output of @option{--relative-to} so that relative names are output,
-only when @var{file}s are descendants of @var{base}.  Otherwise output the
-absolute file name.  If @option{--relative-to} was not specified, then
-the descendants of @var{base} are printed relative to @var{base}.  If
-@option{--relative-to} is specified, then that directory must be a
-descendant of @var{base} for this option to have an effect.
-Note: this option honors the @option{-m} and @option{-e}
-options pertaining to file existence.  For example:
-
-@example
-realpath --relative-to=/usr /tmp /usr/bin
-@result{} ../tmp
-@result{} bin
-realpath --relative-base=/usr /tmp /usr/bin
-@result{} /tmp
-@result{} bin
-@end example
+Print the resolved file names as relative @emph{if} the files
+are descendants of @var{dir}.
+Otherwise, print the resolved file names as absolute.
+Note this option honors the @option{-m} and @option{-e} options
+pertaining to file existence.
+For details about combining @option{--relative-to} and @option{--relative-base},
+@pxref{Realpath usage examples}.
 
 @item -s
 @itemx --strip
@@ -14163,6 +14395,80 @@ Exit status:
 0 if all file names were printed without issue.
 1 otherwise.
 @end display
+
+@menu
+* Realpath usage examples::              Realpath usage examples.
+@end menu
+
+
+@node Realpath usage examples
+@subsection Realpath usage examples
+
+@opindex --relative-to
+@opindex --relative-base
+
+By default, @command{realpath} prints the absolute file name of given files
+(symlinks are resolved, @file{words} is resolved to @file{american-english}):
+
+@example
+@group
+cd /home/user
+realpath /usr/bin/sort /tmp/foo /usr/share/dict/words 1.txt
+@result{} /usr/bin/sort
+@result{} /tmp/foo
+@result{} /usr/share/dict/american-english
+@result{} /home/user/1.txt
+@end group
+@end example
+
+With @option{--relative-to}, file names are printed relative to
+the given directory:
+
+@example
+@group
+realpath --relative-to=/usr/bin \
+         /usr/bin/sort /tmp/foo /usr/share/dict/words 1.txt
+@result{} sort
+@result{} ../../tmp/foo
+@result{} ../share/dict/american-english
+@result{} ../../home/user/1.txt
+@end group
+@end example
+
+With @option{--relative-base}, relative file names are printed @emph{if}
+the resolved file name is below the given base directory. For files outside the
+base directory absolute file names are printed:
+
+@example
+@group
+realpath --relative-base=/usr \
+         /usr/bin/sort /tmp/foo /usr/share/dict/words 1.txt
+@result{} bin/sort
+@result{} /tmp/foo
+@result{} share/dict/american-english
+@result{} /home/user/1.txt
+@end group
+@end example
+
+When both @option{--relative-to=DIR1} and @option{--relative-base=DIR2}
+are used, file names are printed relative to @var{dir1} @emph{if} they are
+located below @var{dir2}. If the files are not below @var{dir2}, they are
+printed as absolute file names:
+
+@example
+@group
+realpath --relative-to=/usr/bin --relative-base=/usr \
+         /usr/bin/sort /tmp/foo /usr/share/dict/words 1.txt
+@result{} sort
+@result{} /tmp/foo
+@result{} ../share/dict/american-english
+@result{} /home/user/1.txt
+@end group
+@end example
+
+When both @option{--relative-to=DIR1} and @option{--relative-base=DIR2}
+are used, @var{dir1} @emph{must} be a subdirectory of @var{dir2}. Otherwise,
+@command{realpath} prints absolutes file names.
 
 
 @node Working context
@@ -15044,7 +15350,6 @@ Exit status:
 1 if standard input is a non-terminal file
 2 if given incorrect arguments
 3 if a write error occurs
-4 if standard input is closed or its type cannot be determined
 @end display
 
 
@@ -15079,7 +15384,7 @@ logins, groups, and so forth.
 running it if no user is specified.  Synopsis:
 
 @example
-id [@var{option}]@dots{} [@var{user}]
+id [@var{option}]@dots{} [@var{user}]@dots{}
 @end example
 
 @var{user} can be either a user ID or a name, with name look-up
@@ -15148,8 +15453,11 @@ set the exit status to 1.
 @itemx --zero
 @opindex -z
 @opindex --zero
-Delimit output items with NUL characters.
+Delimit output items with ASCII NUL characters.
 This option is not permitted when using the default format.
+When multiple users are specified, and the @option{--groups} option
+is also in effect, groups are delimited with a single NUL character,
+while users are delimited with two NUL characters.
 
 Example:
 @example
@@ -15607,7 +15915,9 @@ date; same as @samp{%m/%d/%y}
 @item %e
 day of month, space padded; same as @samp{%_d}
 @item %F
-full date in ISO 8601 format; same as @samp{%Y-%m-%d}.
+full date in ISO 8601 format; like @samp{%+4Y-%m-%d}
+except that any flags or field width override the @samp{+}
+and (after subtracting 6) the @samp{4}.
 This is a good choice for a date format, as it is standard and
 is easy to sort in the usual case where years are in the range
 0000@dots{}9999.
@@ -15696,24 +16006,34 @@ example, numeric months are always output as two digits.
 Seconds since the epoch are not padded, though,
 since there is no natural width for them.
 
-As a GNU extension, @command{date} recognizes any of the
-following optional flags after the @samp{%}:
+The following optional flags can appear after the @samp{%}:
 
 @table @samp
 @item -
 (hyphen) Do not pad the field; useful if the output is intended for
 human consumption.
+This is a GNU extension.
 @item _
 (underscore) Pad with spaces; useful if you need a fixed
 number of characters in the output, but zeros are too distracting.
+This is a GNU extension.
 @item 0
 (zero) Pad with zeros even if the conversion specifier
 would normally pad with spaces.
+@item +
+Pad with zeros, like @samp{0}.  In addition, precede any year number
+with @samp{+} if it exceeds 9999 or if its field width exceeds 4;
+similarly, precede any century number with @samp{+} if it exceeds 99
+or if its field width exceeds 2.  This supports ISO 8601 formats
+for dates far in the future; for example, the command @code{date
+--date=12019-02-25 +%+13F} outputs the string @samp{+012019-02-25}.
 @item ^
 Use upper case characters if possible.
+This is a GNU extension.
 @item #
 Use opposite case characters if possible.
 A field that is normally upper case becomes lower case, and vice versa.
+This is a GNU extension.
 @end table
 
 @noindent
@@ -15728,7 +16048,7 @@ date +%_d/%_m -d "Feb 1"
 @result{}  1/ 2
 @end example
 
-As a GNU extension, you can specify the field width
+You can optionally specify the field width
 (after any flag, if present) as a decimal number.  If the natural size of the
 output of the field has less than the specified number of characters,
 the result is written right adjusted and padded to the given
@@ -15753,6 +16073,12 @@ applies only to numeric conversion specifiers.
 
 If the format supports the modifier but no alternate representation
 is available, it is ignored.
+
+POSIX specifies the behavior of flags and field widths only for
+@samp{%C}, @samp{%F}, @samp{%G}, and @samp{%Y} (all without
+modifiers), and requires a flag to be present if and only if a field
+width is also present.  Other combinations of flags, field widths and
+modifiers are GNU extensions.
 
 
 @node Setting the time
@@ -15905,7 +16231,7 @@ Fri, 09 Sep 2005 13:51:39 -0700
 @opindex --rfc-2822
 This format conforms to Internet RFCs
 @uref{https://tools.ietf.org/search/rfc5322, 5322},
-@uref{https://tools.ietf.org/search/rfc2822, 822} and
+@uref{https://tools.ietf.org/search/rfc2822, 2822} and
 @uref{https://tools.ietf.org/search/rfc822, 822}, the
 current and previous standards for Internet email.
 For compatibility with older versions of @command{date},
@@ -16098,26 +16424,26 @@ date -u --date=2000-01-01 +%s
 To convert such an unwieldy number of seconds back to
 a more readable form, use a command like this:
 
-@smallexample
+@example
 # local time zone used
 date -d '1970-01-01 UTC 946684800 seconds' +"%Y-%m-%d %T %z"
 1999-12-31 19:00:00 -0500
-@end smallexample
+@end example
 
 Or if you do not mind depending on the @samp{@@} feature present since
 coreutils 5.3.0, you could shorten this to:
 
-@smallexample
+@example
 date -d @@946684800 +"%F %T %z"
 1999-12-31 19:00:00 -0500
-@end smallexample
+@end example
 
 Often it is better to output UTC-relative date and time:
 
-@smallexample
+@example
 date -u -d '1970-01-01 946684800 seconds' +"%Y-%m-%d %T %z"
 2000-01-01 00:00:00 +0000
-@end smallexample
+@end example
 
 @item
 @cindex leap seconds
@@ -16241,11 +16567,11 @@ The information may contain internal spaces, so such output cannot be
 parsed reliably.  In the following example, @var{release} is
 @samp{2.2.18ss.e820-bda652a #4 SMP Tue Jun 5 11:24:08 PDT 2001}:
 
-@smallexample
+@example
 uname -a
 @result{} Linux dumdum 2.2.18 #4 SMP Tue Jun 5 11:24:08 PDT 2001 i686@c
  unknown unknown GNU/Linux
-@end smallexample
+@end example
 
 
 The program accepts the following options.  Also see @ref{Common options}.
@@ -16463,12 +16789,12 @@ contexts.
 @command{chcon} changes the SELinux security context of the selected files.
 Synopses:
 
-@smallexample
+@example
 chcon [@var{option}]@dots{} @var{context} @var{file}@dots{}
 chcon [@var{option}]@dots{} [-u @var{user}] [-r @var{role}] [-l @var{range}]@c
  [-t @var{type}] @var{file}@dots{}
 chcon [@var{option}]@dots{} --reference=@var{rfile} @var{file}@dots{}
-@end smallexample
+@end example
 
 Change the SELinux security context of each @var{file} to @var{context}.
 With @option{--reference}, change the security context of each @var{file}
@@ -16566,11 +16892,11 @@ Set range @var{range} in the target security context.
 @command{runcon} runs file in specified SELinux security context.
 
 Synopses:
-@smallexample
+@example
 runcon @var{context} @var{command} [@var{args}]
 runcon [ -c ] [-u @var{user}] [-r @var{role}] [-t @var{type}]@c
  [-l @var{range}] @var{command} [@var{args}]
-@end smallexample
+@end example
 
 Run @var{command} with completely-specified @var{context}, or with
 current or transitioned security context modified by one or more of @var{level},
@@ -16584,7 +16910,14 @@ are interpreted as arguments to the command.
 With neither @var{context} nor @var{command}, print the current
 security context.
 
-The program accepts the following options.  Also see @ref{Common options}.
+@cindex restricted security context
+@cindex NO_NEW_PRIVS
+Note also the @command{setpriv} command which can be used to set the
+NO_NEW_PRIVS bit using @command{setpriv --no-new-privs runcon ...},
+thus disallowing usage of a security context with more privileges
+than the process would normally have.
+
+@command{runcon} accepts the following options.  Also see @ref{Common options}.
 
 @table @samp
 
@@ -16779,7 +17112,16 @@ the exit status of @var{command} otherwise
 @example
 env [@var{option}]@dots{} [@var{name}=@var{value}]@dots{} @c
 [@var{command} [@var{args}]@dots{}]
+env -[v]S'[@var{option}]@dots{} [@var{name}=@var{value}]@dots{} @c
+[@var{command} [@var{args}]@dots{}]'
 env
+@end example
+
+@command{env} is commonly used on first line of scripts (shebang line):
+@example
+#!/usr/bin/env @var{command}
+#!/usr/bin/env -[v]S[@var{option}]@dots{} [@var{name}=@var{value}]@dots{} @c
+@var{command} [@var{args}]@dots{}
 @end example
 
 Operands of the form @samp{@var{variable}=@var{value}} set
@@ -16880,6 +17222,8 @@ env -u EDITOR PATH=/energy -- e=mc2 bar baz
 @end itemize
 
 
+@subsection General options
+
 The program accepts the following options.  Also see @ref{Common options}.
 Options must precede operands.
 
@@ -16902,6 +17246,117 @@ environment.
 @opindex --ignore-environment
 Start with an empty environment, ignoring the inherited environment.
 
+@item -C @var{dir}
+@itemx --chdir=@var{dir}
+@opindex -C
+@opindex --chdir
+Change the working directory to @var{dir} before invoking @var{command}.
+This differs from the shell built-in @command{cd} in that it starts
+@var{command} as a subprocess rather than altering the shell's own working
+directory; this allows it to be chained with other commands that run commands
+in a different context.  For example:
+
+@example
+# Run 'true' with /chroot as its root directory and /srv as its working
+# directory.
+chroot /chroot env --chdir=/srv true
+# Run 'true' with /build as its working directory, FOO=bar in its
+# environment, and a time limit of five seconds.
+env --chdir=/build FOO=bar timeout 5 true
+@end example
+
+@item --default-signal[=@var{sig}]
+Unblock and reset signal @var{sig} to its default signal handler.
+Without @var{sig} all known signals are unblocked and reset to their defaults.
+Multiple signals can be comma-separated.  The following command runs
+@command{seq} with SIGINT and SIGPIPE set to their default
+(which is to terminate the program):
+
+@example
+env --default-signal=PIPE,INT seq 1000 | head -n1
+@end example
+
+In the following example, we see how this is not
+possible to do with traditional shells.
+Here the first trap command sets SIGPIPE to ignore.
+The second trap command ostensibly sets it back to its default,
+but POSIX mandates that the shell must not change inherited
+state of the signal - so it is a no-op.
+
+@example
+trap '' PIPE && sh -c 'trap - PIPE ; seq inf | head -n1'
+@end example
+
+Using @option{--default-signal=PIPE} we can
+ensure the signal handling is set to its default behavior:
+
+@example
+trap '' PIPE && sh -c 'env --default-signal=PIPE seq inf | head -n1'
+@end example
+
+
+@item --ignore-signal[=@var{sig}]
+Ignore signal @var{sig} when running a program.  Without @var{sig} all
+known signals are set to ignore.  Multiple signals can be
+comma-separated.  The following command runs @command{seq} with SIGINT set
+to be ignored - pressing @kbd{Ctrl-C} will not terminate it:
+
+@example
+env --ignore-signal=INT seq inf > /dev/null
+@end example
+
+@samp{SIGCHLD} is special, in that @option{--ignore-signal=CHLD} might have
+no effect (POSIX says it's unspecified).
+
+Most operating systems do not allow ignoring @samp{SIGKILL}, @samp{SIGSTOP}
+(and possibly other signals).  Attempting to ignore these signals will fail.
+
+Multiple (and contradictory) @option{--default-signal=SIG} and
+@option{--ignore-signal=SIG} options are processed left-to-right,
+with the latter taking precedence.  In the following example, @samp{SIGPIPE} is
+set to default while @samp{SIGINT} is ignored:
+
+@example
+env --default-signal=INT,PIPE --ignore-signal=INT
+@end example
+
+@item --block-signal[=@var{sig}]
+Block signal(s) @var{sig} from being delivered.
+
+@item --list-signal-handling
+List blocked or ignored signals to stderr, before executing a command.
+
+@item -v
+@itemx --debug
+@opindex -v
+@opindex --debug
+Show verbose information for each processing step.
+
+@example
+$ env -v -uTERM A=B uname -s
+unset:    TERM
+setenv:   A=B
+executing: uname
+   arg[0]= 'uname'
+   arg[1]= '-s'
+Linux
+@end example
+
+When combined with @option{-S} it is recommended to list @option{-v}
+first, e.g. @command{env -vS'string'}.
+
+@item -S @var{string}
+@itemx --split-string=@var{string}
+@opindex -S
+@opindex --split-string
+@cindex shebang arguments
+@cindex scripts arguments
+@cindex env in scripts
+process and split @var{string} into separate arguments used to pass
+multiple arguments on shebang lines.  @command{env} supports FreeBSD's
+syntax of several escape sequences and environment variable
+expansions. See below for details and examples.
+
 @end table
 
 @cindex exit status of @command{env}
@@ -16914,6 +17369,352 @@ Exit status:
 127 if @var{command} cannot be found
 the exit status of @var{command} otherwise
 @end display
+
+@subsection @option{-S}/@option{--split-string} usage in scripts
+
+The @option{-S}/@option{--split-string} options enable using multiple
+arguments on the first one of scripts (shebang line, @samp{#!}).
+
+When a script's interpreter is in a known location, scripts typically
+contain the absolute file name in their first line:
+
+@multitable {Python Script:} {#!/usr/bin/python3}
+@item Shell script:
+@tab
+@example
+#!/bin/sh
+echo hello
+@end example
+
+@item Perl script:
+@tab
+@example
+#!/usr/bin/perl
+print "hello\n";
+@end example
+
+@item Python script:
+@tab
+@example
+#!/usr/bin/python3
+print("hello")
+@end example
+
+@end multitable
+
+When a script's interpreter is in a non-standard location
+in the @env{PATH} environment variable, it is recommended
+to use @command{env} on the first line of the script to
+find the executable and run it:
+
+@multitable {Python Script:} {#!/usr/bin/env python3}
+@item Shell script:
+@tab
+@example
+#!/usr/bin/env bash
+echo hello
+@end example
+
+@item Perl script:
+@tab
+@example
+#!/usr/bin/env perl
+print "hello\n";
+@end example
+
+@item Python script:
+@tab
+@example
+#!/usr/bin/env python3
+print("hello")
+@end example
+
+@end multitable
+
+Most operating systems (e.g. GNU/Linux, BSDs) treat all text after the
+first space as a single argument. When using @command{env} in a script
+it is thus not possible to specify multiple arguments.
+
+In the following example:
+@example
+#!/usr/bin/env perl -T -w
+print "hello\n";
+@end example
+
+The operating system treats @samp{perl -T -w} as one argument (the
+program's name), and executing the script fails with:
+
+@example
+/usr/bin/env: 'perl -T -w': No such file or directory
+@end example
+
+The @option{-S} option instructs @command{env} to split the single string
+into multiple arguments. The following example works as expected:
+
+@example
+$ cat hello.pl
+#!/usr/bin/env -S perl -T -w
+print "hello\n";
+
+$ chmod a+x hello.pl
+$ ./hello.pl
+hello
+@end example
+
+And is equivalent to running @command{perl -T -w hello.pl} on the command line
+prompt.
+
+@unnumberedsubsubsec Testing and troubleshooting
+
+@cindex single quotes, and @command{env -S}
+@cindex @command{env -S}, and single quotes
+@cindex @option{-S}, env and single quotes
+To test @command{env -S} on the command line, use single quotes for the
+@option{-S} string to emulate a single paramter. Single quotes are not
+needed when using @command{env -S} in a shebang line on the first line of a
+script (the operating system already treats it as one argument).
+
+The following command is equivalent to the @file{hello.pl} script above:
+
+@example
+$ env -S'perl -T -w' hello.pl
+@end example
+
+@cindex @command{env -S}, debugging
+@cindex debugging, @command{env -S}
+
+To troubleshoot @option{-S} usage add the @option{-v} as the first
+argument (before @option{-S}).
+
+Using @option{-vS} on a shebang line in a script:
+
+@example
+$ cat hello-debug.pl
+#!/usr/bin/env -vS perl -T -w
+print "hello\n";
+
+$ chmod a+x hello-debug.pl
+$ ./hello-debug.pl
+split -S:  'perl -T -w'
+ into:    'perl'
+     &    '-T'
+     &    '-w'
+executing: perl
+   arg[0]= 'perl'
+   arg[1]= '-T'
+   arg[2]= '-w'
+   arg[3]= './hello-debug.pl'
+hello
+@end example
+
+Using @option{-vS} on the command line prompt (adding single quotes):
+
+@example
+$ env -vS'perl -T -w' hello-debug.pl
+split -S:  'perl -T -w'
+ into:    'perl'
+     &    '-T'
+     &    '-w'
+executing: perl
+   arg[0]= 'perl'
+   arg[1]= '-T'
+   arg[2]= '-w'
+   arg[3]= 'hello-debug.pl'
+hello
+@end example
+
+@subsection @option{-S}/@option{--split-string} syntax
+
+@unnumberedsubsubsec Splitting arguments by whitespace
+
+Running @command{env -Sstring} splits the @var{string} into
+arguments based on unquoted spaces or tab characters.
+
+In the following contrived example the @command{awk} variable
+@samp{OFS} will be @code{<space>xyz<space>} as these spaces are inside
+double quotes. The other space characters are used as argument separators:
+
+@example
+$ cat one.awk
+#!/usr/bin/env -S awk -v OFS=" xyz " -f
+BEGIN @{print 1,2,3@}
+
+$ chmod a+x one.awk
+$ ./one.awk
+1 xyz 2 xyz 3
+@end example
+
+When using @option{-S} on the command line prompt, remember to add
+single quotes around the entire string:
+
+@example
+$ env -S'awk -v OFS=" xyz " -f' one.awk
+1 xyz 2 xyz 3
+@end example
+
+@unnumberedsubsubsec Escape sequences
+
+@command{env} supports several escape sequences. These sequences
+are processed when unquoted or inside double quotes (unless otherwise noted).
+Single quotes disable escape sequences except @samp{\'} and @samp{\\}.
+
+@multitable @columnfractions .10 .90
+
+@item @code{\c}
+@tab Ignore the remaining characters in the string.
+Cannot be used inside double quotes.
+
+@item @code{\f}
+@tab form-feed character (ASCII 0x0C)
+
+@item @code{\n}
+@tab new-line character (ASCII 0x0A)
+
+@item @code{\r}
+@tab carriage-return character (ASCII 0x0D)
+
+@item @code{\t}
+@tab tab character (ASCII 0x09)
+
+@item @code{\v}
+@tab vertical tab character (ASCII 0x0B)
+
+@item @code{\#}
+@tab A hash @samp{#} character. Used when a @samp{#} character
+is needed as the first character of an argument (see 'comments' section
+below).
+
+@item @code{\$}
+@tab A dollar-sign character @samp{$}. Unescaped @samp{$} characters
+are used to expand environment variables (see 'variables' section below).
+
+@item @code{\_}
+@tab Inside double-quotes, replaced with a single space character.
+Outside quotes, treated as an argument separator. @samp{\_} can be used
+to avoid space characters in a shebang line (see examples below).
+
+@item @code{\"}
+@tab A double-quote character.
+
+@item @code{\'}
+@tab A single-quote character.
+This escape sequence works inside single-quoted strings.
+
+@item @code{\\}
+@tab A backslash character.
+This escape sequence works inside single-quoted strings.
+
+@end multitable
+
+The following @command{awk} script will use tab character as input and output
+field separator (instead of spaces and tabs):
+
+@example
+$ cat tabs.awk
+#!/usr/bin/env -S awk -v FS="\t" -v OFS="\t" -f
+...
+@end example
+
+@unnumberedsubsubsec Comments
+
+The escape sequence @samp{\c} (used outside single/double quotes)
+causes @command{env} to ignore the rest of the string.
+
+The @samp{#} character causes @command{env} to ignore the rest of
+the string when it appears as the first character of an argument.
+Use @samp{\#} to reverse this behavior.
+
+@example
+$ env -S'printf %s\n A B C'
+A
+B
+C
+
+$ env -S'printf %s\n A# B C'
+A#
+B
+C
+
+$ env -S'printf %s\n A #B C'
+A
+
+$ env -S'printf %s\n A \#B C'
+A
+#B
+C
+
+$ env -S'printf %s\n A\cB C'
+A
+@end example
+
+NOTE: The above examples use single quotes as they are executed
+on the command-line.
+
+
+
+@unnumberedsubsubsec Environment variable expansion
+
+The pattern @samp{$@{VARNAME@}} is used to substitute a value from
+the environment variable. The pattern must include the curly braces
+(@samp{@{},@samp{@}}). Without them @command{env} will reject the string.
+Special shell variables (such as @samp{$@@}, @samp{$*}, @samp{$$}) are
+not supported.
+
+If the environment variable is empty or not set, the pattern will be replaced
+by an empty string. The value of @samp{$@{VARNAME@}} will be that of
+the executed @command{env}, before any modifications using
+@option{-i}/@option{--ignore-environment}/@option{-u}/@option{--unset} or
+setting new values using @samp{VAR=VALUE}.
+
+The following python script prepends @file{/opt/custom/modules} to the python
+module search path environment variable (@samp{PYTHONPATH}):
+
+@example
+$ cat custom.py
+#!/usr/bin/env -S PYTHONPATH=/opt/custom/modules/:$@{PYTHONPATH@} python
+print "hello"
+...
+@end example
+
+The expansion of @samp{$@{PYTHONPATH@}} is performed by @command{env},
+not by a shell. If the curly braces are omitted, @command{env} will fail:
+
+@example
+$ cat custom.py
+#!/usr/bin/env -S PYTHONPATH=/opt/custom/modules/:$PYTHONPATH python
+print "hello"
+...
+
+$ chmod a+x custom.py
+$ custom.py
+/usr/bin/env: only $@{VARNAME@} expansion is supported, error at: $PYTHONPATH @c
+python
+@end example
+
+Environment variable expansion happens before clearing the environment
+(with @option{-i}) or unsetting specific variables (with @option{-u}):
+
+@example
+$ env -S'-i OLDUSER=$@{USER@} env'
+OLDUSER=gordon
+@end example
+
+Use @option{-v} to diagnose the operations step-by-step:
+
+@example
+$ env -vS'-i OLDUSER=$@{USER@} env'
+expanding $@{USER@} into 'gordon'
+split -S:  '-i OLDUSER=$@{USER@} env'
+ into:    '-i'
+     &    'OLDUSER=gordon'
+     &    'env'
+cleaning environ
+setenv:   OLDUSER=gordon
+executing: env
+   arg[0]= 'env'
+OLDUSER=gordon
+@end example
+
 
 
 @node nice invocation
@@ -17278,10 +18079,17 @@ the @var{command}.
 Send this @var{signal} to @var{command} on timeout, rather than the
 default @samp{TERM} signal.  @var{signal} may be a name like @samp{HUP}
 or a number.  @xref{Signal specifications}.
+
+@item -v
+@itemx --verbose
+@opindex -v
+@opindex --verbose
+Diagnose to stderr, any signal sent upon timeout.
 @end table
 
 @cindex time units
-@var{duration} is a floating point number followed by an optional unit:
+@var{duration} is a floating point number in either the current or the
+C locale (@pxref{Floating point}) followed by an optional unit:
 @display
 @samp{s} for seconds (the default)
 @samp{m} for minutes
@@ -17417,7 +18225,7 @@ sleep @var{number}[smhd]@dots{}
 @end example
 
 @cindex time units
-Each argument is a number followed by an optional unit; the default
+Each argument is a non-negative number followed by an optional unit; the default
 is seconds.  The units are:
 
 @table @samp
@@ -17431,10 +18239,10 @@ hours
 days
 @end table
 
-Historical implementations of @command{sleep} have required that
-@var{number} be an integer, and only accepted a single argument
-without a suffix.  However, GNU @command{sleep} accepts
-arbitrary floating point numbers.  @xref{Floating point}.
+Although portable POSIX scripts must give @command{sleep} a single
+non-negative integer argument without a suffix, GNU @command{sleep}
+also accepts two or more arguments, unit suffixes, and floating-point
+numbers in either the current or the C locale.  @xref{Floating point}.
 
 The only options are @option{--help} and @option{--version}.  @xref{Common
 options}.
@@ -17880,10 +18688,11 @@ even when @var{first} is larger than @var{last}.
 The sequence of numbers ends when the sum of the current number and
 @var{increment} would become greater than @var{last},
 so @code{seq 1 10 10} only produces @samp{1}.
-@var{increment} must not be @samp{0}; use @command{yes} to get
+@var{increment} must not be @samp{0}; use the tool @command{yes} to get
 repeated output of a constant number.
 @var{first}, @var{increment} and @var{last} must not be @code{NaN}.
-Floating-point numbers may be specified.  @xref{Floating point}.
+Floating-point numbers may be specified in either the current or
+the C locale.  @xref{Floating point}.
 
 The program accepts the following options.  Also see @ref{Common options}.
 Options must precede operands.
@@ -18075,7 +18884,7 @@ to set a file's timestamp to an arbitrary value.
 @chapter Opening the Software Toolbox
 
 An earlier version of this chapter appeared in
-@uref{http://www.linuxjournal.com/article.php?sid=2762, the
+@uref{https://www.linuxjournal.com/article.php?sid=2762, the
 @cite{What's GNU@?} column of the June 1994 @cite{Linux Journal}}.
 It was written by Arnold Robbins.
 
@@ -18165,9 +18974,9 @@ water pipeline.
 
 With the Unix shell, it's very easy to set up data pipelines:
 
-@smallexample
+@example
 program_to_create_data | filter1 | ... | filterN > final.pretty.data
-@end smallexample
+@end example
 
 We start out by creating the raw data; each filter applies some successive
 transformation to the data, until by the time it comes out of the pipeline,
@@ -18447,9 +19256,9 @@ The next step is to get rid of punctuation.  Quoted words and unquoted words
 should be treated identically; it's easiest to just get the punctuation out of
 the way.
 
-@smallexample
+@example
 $ tr '[:upper:]' '[:lower:]' < whats.gnu | tr -cd '[:alnum:]_ \n' | ...
-@end smallexample
+@end example
 
 The second @command{tr} command operates on the complement of the listed
 characters, which are all the letters, the digits, the underscore, and
@@ -18462,10 +19271,10 @@ The words only contain alphanumeric characters (and the underscore).  The
 next step is break the data apart so that we have one word per line.  This
 makes the counting operation much easier, as we will see shortly.
 
-@smallexample
+@example
 $ tr '[:upper:]' '[:lower:]' < whats.gnu | tr -cd '[:alnum:]_ \n' |
 > tr -s ' ' '\n' | ...
-@end smallexample
+@end example
 
 This command turns blanks into newlines.  The @option{-s} option squeezes
 multiple newline characters in the output into just one, removing
@@ -18476,10 +19285,10 @@ typing in all of a command.)
 We now have data consisting of one word per line, no punctuation, all one
 case.  We're ready to count each word:
 
-@smallexample
+@example
 $ tr '[:upper:]' '[:lower:]' < whats.gnu | tr -cd '[:alnum:]_ \n' |
 > tr -s ' ' '\n' | sort | uniq -c | ...
-@end smallexample
+@end example
 
 At this point, the data might look something like this:
 
@@ -18508,7 +19317,7 @@ reverse the order of the sort
 
 The final pipeline looks like this:
 
-@smallexample
+@example
 $ tr '[:upper:]' '[:lower:]' < whats.gnu | tr -cd '[:alnum:]_ \n' |
 > tr -s ' ' '\n' | sort | uniq -c | sort -n -r
 @print{}    156 the
@@ -18517,7 +19326,7 @@ $ tr '[:upper:]' '[:lower:]' < whats.gnu | tr -cd '[:alnum:]_ \n' |
 @print{}     51 of
 @print{}     51 and
 @dots{}
-@end smallexample
+@end example
 
 Whew!  That's a lot to digest.  Yet, the same principles apply.  With six
 commands, on two lines (really one long one split for convenience), we've
@@ -18536,19 +19345,19 @@ this is a sorted, 45,402 word dictionary.
 Now, how to compare our file with the dictionary?  As before, we generate
 a sorted list of words, one per line:
 
-@smallexample
+@example
 $ tr '[:upper:]' '[:lower:]' < whats.gnu | tr -cd '[:alnum:]_ \n' |
 > tr -s ' ' '\n' | sort -u | ...
-@end smallexample
+@end example
 
 Now, all we need is a list of words that are @emph{not} in the
 dictionary.  Here is where the @command{comm} command comes in.
 
-@smallexample
+@example
 $ tr '[:upper:]' '[:lower:]' < whats.gnu | tr -cd '[:alnum:]_ \n' |
 > tr -s ' ' '\n' | sort -u |
 > comm -23 - /usr/dict/words
-@end smallexample
+@end example
 
 The @option{-2} and @option{-3} options eliminate lines that are only in the
 dictionary (the second file), and lines that are in both files.  Lines

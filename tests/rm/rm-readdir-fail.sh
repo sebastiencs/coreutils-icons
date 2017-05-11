@@ -2,7 +2,7 @@
 # Test rm's behaviour when the directory cannot be read.
 # This test is skipped on systems that lack LD_PRELOAD support.
 
-# Copyright (C) 2016-2017 Free Software Foundation, Inc.
+# Copyright (C) 2016-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ rm
@@ -40,6 +40,15 @@ cat > k.c <<\EOF || framework_failure_
 
 struct dirent *readdir (DIR *dirp)
 {
+  static int count = 1;
+
+#ifndef __LP64__
+  if (count == 1)
+    fclose (fopen ("32bit", "w"));
+  errno = ENOSYS;
+  return NULL;
+#endif
+
   static struct dirent *(*real_readdir)(DIR *dirp);
   if (! real_readdir && ! (real_readdir = dlsym (RTLD_NEXT, "readdir")))
     {
@@ -56,7 +65,6 @@ struct dirent *readdir (DIR *dirp)
     }
 
   /* Flag that LD_PRELOAD and above functions work.  */
-  static int count = 1;
   if (count == 1)
     fclose (fopen ("preloaded", "w"));
 
@@ -90,8 +98,10 @@ for READDIR_PARTIAL in '' '1'; do
   rm -f preloaded
   (export LD_PRELOAD=$LD_PRELOAD:./k.so
    returns_ 1 rm -Rf dir 2>>errt) || fail=1
-  if ! test -f preloaded; then
-    cat err
+  if test -f 32bit; then
+    skip_ 'This test only supports 64 bit systems'
+  elif ! test -f preloaded; then
+    cat errt
     skip_ "internal test failure: maybe LD_PRELOAD doesn't work?"
   fi
 done

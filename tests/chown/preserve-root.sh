@@ -1,7 +1,7 @@
 #!/bin/sh
 # Verify that --preserve-root works.
 
-# Copyright (C) 2006-2017 Free Software Foundation, Inc.
+# Copyright (C) 2006-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
 print_ver_ chown
@@ -37,16 +37,16 @@ chmod -R --preserve-root u+r / >> out 2>&1 && fail=1
 # With -RHh, --preserve-root should trigger nothing,
 # since the symlink in question is not a command line argument.
 # Contrary to the above commands, these two should succeed.
-echo '==== test -RHh' >> out
+echo '==== test -RHh' >> out || framework_failure_
 chown -RHh --preserve-root $(id -u) d >> out 2>&1 || fail=1
 chgrp -RHh --preserve-root $(id -g) d >> out 2>&1 || fail=1
 
 # These must fail.
-echo '==== test -RLh' >> out
+echo '==== test -RLh' >> out || framework_failure_
 chown -RLh --preserve-root $(id -u) d >> out 2>&1 && fail=1
 chgrp -RLh --preserve-root $(id -g) d >> out 2>&1 && fail=1
 
-cat <<\EOF > exp || fail=1
+cat <<\EOF > exp || framework_failure_
 chown: it is dangerous to operate recursively on '/'
 chown: use --no-preserve-root to override this failsafe
 chgrp: it is dangerous to operate recursively on '/'

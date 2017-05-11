@@ -1,7 +1,7 @@
 #!/bin/sh
 # Detect printf(3) failure even when it doesn't set stream error indicator
 
-# Copyright (C) 2007-2017 Free Software Foundation, Inc.
+# Copyright (C) 2007-2019 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 prog=printf
 
@@ -49,6 +49,7 @@ vm=$(get_min_ulimit_v_ env $prog %20f 0) \
 # triggering the printf(3) misbehavior -- which, btw, is required by ISO C99.
 
 mkfifo_or_skip_ fifo
+trap_sigpipe_or_skip_
 
 # Disable MALLOC_PERTURB_, to avoid triggering this bug
 # https://bugs.debian.org/481543#77
@@ -60,11 +61,11 @@ cleanup_() { kill $pid 2>/dev/null && wait $pid; }
 head -c 10 fifo > out & pid=$!
 
 # Trigger large mem allocation failure
-( ulimit -v $vm && env $prog %20000000f 0 2>err-msg > fifo )
+( trap '' PIPE && ulimit -v $vm && env $prog %20000000f 0 2>err-msg > fifo )
 exit=$?
 
 # Map this longer, and rarer, diagnostic to the common one.
-# printf: cannot perform formatted output: Cannot allocate memory" \
+# printf: cannot perform formatted output: Cannot allocate memory"
 sed 's/cannot perform .*/write error/' err-msg > k && mv k err-msg
 err_msg=$(tr '\n' : < err-msg)
 
@@ -81,6 +82,7 @@ n_out=$(wc -c < out)
 
 case $n_out:$diagnostic:$exit in
   10:n:0) ;; # ok, succeeds w/no diagnostic: FreeBSD 6.1
+  10:y:1) ;; # ok, fails with EPIPE diagnostic: musl libc
   0:y:1)  ;; # ok, glibc-2.8 and newer, when printf(3) fails with ENOMEM
 
   # With MALLOC_PERTURB_=0, this no longer happens.
