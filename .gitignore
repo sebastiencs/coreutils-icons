@@ -178,6 +178,7 @@
 /src/single-binary.mk
 /src/version.c
 /src/version.h
+/src/icons-in-terminal.h
 /stamp-h1
 /tests/*/*.log
 /tests/*/*.trs

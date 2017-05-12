@@ -53,6 +53,8 @@ noinst_HEADERS =		\
   src/group-list.h		\
   src/ioblksize.h		\
   src/longlong.h		\
+  src/icons-in-terminal.h	\
+  src/ls-icons.h		\
   src/ls.h			\
   src/operand2sig.h		\
   src/prog-fprintf.h		\
@@ -354,11 +356,11 @@ nodist_src_coreutils_SOURCES = src/coreutils.h
 src_coreutils_SOURCES = src/coreutils.c
 
 src_cp_SOURCES = src/cp.c $(copy_sources) $(selinux_sources)
-src_dir_SOURCES = src/ls.c src/ls-dir.c
-src_vdir_SOURCES = src/ls.c src/ls-vdir.c
+src_dir_SOURCES = src/ls.c src/ls-dir.c src/ls-icons.c
+src_vdir_SOURCES = src/ls.c src/ls-vdir.c src/ls-icons.c
 src_id_SOURCES = src/id.c src/group-list.c
 src_groups_SOURCES = src/groups.c src/group-list.c
-src_ls_SOURCES = src/ls.c src/ls-ls.c
+src_ls_SOURCES = src/ls.c src/ls-ls.c src/ls-icons.c
 src_ln_SOURCES = src/ln.c \
   src/force-link.c src/force-link.h \
   src/relpath.c src/relpath.h

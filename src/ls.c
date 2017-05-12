@@ -111,6 +111,8 @@
 #include "mbsalign.h"
 #include "dircolors.h"
 
+#include "ls-icons.h"
+
 /* Include <sys/capability.h> last to avoid a clash of <sys/types.h>
    include guards with some premature versions of libcap.
    For more details, see <https://bugzilla.redhat.com/483548>.  */
@@ -248,11 +250,12 @@ static size_t quote_name (char const *name,
                           struct quoting_options const *options,
                           int needs_general_quoting,
                           const struct bin_str *color,
-                          bool allow_pad, struct obstack *stack);
+                          bool allow_pad, struct obstack *stack,
+			  const struct fileinfo *f);
 static size_t quote_name_buf (char **inbuf, size_t bufsize, char *name,
                               struct quoting_options const *options,
                               int needs_general_quoting, size_t *width,
-                              bool *pad);
+                              bool *pad, bool *is_quoted);
 static char *make_link_name (char const *name, char const *linkname);
 static int decode_switches (int argc, char **argv);
 static bool file_ignored (char const *name);
@@ -2720,7 +2723,7 @@ print_dir (char const *name, char const *realname, bool command_line_arg)
       DIRED_INDENT ();
 
       quote_name (realname ? realname : name, dirname_quoting_options, -1,
-                  NULL, true, &subdired_obstack);
+                  NULL, true, &subdired_obstack, NULL); // ICI TODO
 
       DIRED_FPUTS_LITERAL (":\n", stdout);
     }
@@ -4144,7 +4147,10 @@ print_long_format (const struct fileinfo *f)
     {
       if (f->linkname)
         {
-          DIRED_FPUTS_LITERAL (" -> ", stdout);
+	  if (isatty(1))
+	    print_arrow_right(stdout);
+	  else
+	    DIRED_FPUTS_LITERAL (" -> ", stdout);
           print_name_with_quoting (f, true, NULL, (p - buf) + w + 4);
           if (indicator_style != none)
             print_type_indicator (true, f->linkmode, unknown);
@@ -4166,7 +4172,8 @@ print_long_format (const struct fileinfo *f)
 static size_t
 quote_name_buf (char **inbuf, size_t bufsize, char *name,
                 struct quoting_options const *options,
-                int needs_general_quoting, size_t *width, bool *pad)
+                int needs_general_quoting, size_t *width, bool *pad,
+		bool *is_quoted)
 {
   char *buf = *inbuf;
   size_t displayed_width IF_LINT ( = 0);
@@ -4347,6 +4354,9 @@ quote_name_buf (char **inbuf, size_t bufsize, char *name,
      not actually part of the name.  */
   *pad = (align_variable_outer_quotes && cwd_some_quoted && ! quoted);
 
+  if (is_quoted != NULL)
+    *is_quoted = quoted;
+
   if (width != NULL)
     *width = displayed_width;
 
@@ -4365,37 +4375,47 @@ quote_name_width (const char *name, struct quoting_options const *options,
   bool pad;
 
   quote_name_buf (&buf, sizeof smallbuf, (char *) name, options,
-                  needs_general_quoting, &width, &pad);
+                  needs_general_quoting, &width, &pad, NULL);
 
   if (buf != smallbuf && buf != name)
     free (buf);
 
-  width += pad;
+//  width += pad;
 
-  return width;
+  return width + 2;
 }
 
 static size_t
 quote_name (char const *name, struct quoting_options const *options,
             int needs_general_quoting, const struct bin_str *color,
-            bool allow_pad, struct obstack *stack)
+            bool allow_pad, struct obstack *stack, const struct fileinfo *f)
 {
   char smallbuf[BUFSIZ];
   char *buf = smallbuf;
   size_t len;
   bool pad;
+  bool tty = isatty(1);
+
+  bool is_quoted;
 
   len = quote_name_buf (&buf, sizeof smallbuf, (char *) name, options,
-                        needs_general_quoting, NULL, &pad);
+                        needs_general_quoting, NULL, &pad, &is_quoted);
 
-  if (pad && allow_pad)
-      DIRED_PUTCHAR (' ');
+  /* printf ("%d %d ", pad, allow_pad); */
+  /* if (pad && allow_pad) */
+  /*     DIRED_PUTCHAR (' '); */
 
-  if (color)
+  if (color && tty)
     print_color_indicator (color);
 
   if (stack)
     PUSH_CURRENT_DIRED_POS (stack);
+
+  bool is_link = f && f->filetype == symbolic_link && allow_pad;
+  if (tty)
+    print_icon(buf, len, stdout, (f && is_directory(f)) || !f, is_link, is_quoted, color);
+    /* print_icon(buf, len, stdout, f && is_directory(f), f && f->filetype == symbolic_link); */
+//    print_icon(buf, len, stdout, f && is_directory(f), f && f->linkname);
 
   fwrite (buf, 1, len, stdout);
 
@@ -4418,6 +4438,11 @@ print_name_with_quoting (const struct fileinfo *f,
 {
   const char* name = symlink_target ? f->linkname : f->name;
 
+//DIRED_FPUTS_LITERAL (" -> ", stdout);
+//ici
+  /* if (f->linkname) */
+  /*   fwrite("1", 1, 1, stdout); */
+
   const struct bin_str *color = print_with_color ?
                                 get_color_indicator (f, symlink_target) : NULL;
 
@@ -4425,7 +4450,7 @@ print_name_with_quoting (const struct fileinfo *f,
                                && (color || is_colored (C_NORM)));
 
   size_t len = quote_name (name, filename_quoting_options, f->quoted,
-                           color, !symlink_target, stack);
+                           color, !symlink_target, stack, f);
 
   process_signals ();
   if (used_color_this_time)
