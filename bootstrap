@@ -1,6 +1,6 @@
 #! /bin/sh
 # Print a version string.
-scriptversion=2016-11-03.18; # UTC
+scriptversion=2017-05-12.13; # UTC
 
 # Bootstrap this package from checked-out sources.
 
@@ -26,6 +26,23 @@ scriptversion=2016-11-03.18; # UTC
 # intent is that all customization can be done with a bootstrap.conf
 # file also maintained in your version control; gnulib comes with a
 # template build-aux/bootstrap.conf to get you started.
+
+DATA="${HOME}/.local/share"
+if [ -n "$XDG_DATA_HOME" ]; then
+    DATA=$XDG_DATA_HOME
+fi
+
+DATA="${DATA}/icons-in-terminal/"
+ICONS_HEADER="${DATA}/icons-in-terminal.h"
+
+if [ -f "$ICONS_HEADER" ]; then
+    ln -s $ICONS_HEADER ./src/
+else
+    echo "Cannot find icons-in-terminal, are you sure it's installed ?"
+    echo "If you installed it and this message is an error, please open an issue:"
+    echo "https://github.com/sebastiencs/icons-in-terminal"
+    exit 1
+fi
 
 # Please report bugs or propose patches to bug-gnulib@gnu.org.
 
