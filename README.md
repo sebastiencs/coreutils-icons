@@ -12,9 +12,7 @@ This is a fork of [coreutils](https://github.com/coreutils/coreutils) with a mod
 ## Installation
 
 You need to install [icons-in-terminal](https://github.com/sebastiencs/icons-in-terminal) first (No worries, it won't replace your font).  
-Once installed, copy the file `build/icons-in-terminal.h` (from icons-in-terminal repertory) to `src/` (in this project).  
-
-Then run:  
+Once installed, you can run:  
 ```bash
 $ ./bootstrap
 $ ./configure --prefix=/opt/coreutils
