@@ -4413,7 +4413,7 @@ quote_name (char const *name, struct quoting_options const *options,
 
   bool is_link = f && f->filetype == symbolic_link && allow_pad;
   if (tty)
-    print_icon(buf, len, stdout, (f && is_directory(f)) || !f, is_link, is_quoted, color);
+    print_icon(buf, len, stdout, (f && is_directory(f)) || !f, is_link, is_quoted, color && 1);
     /* print_icon(buf, len, stdout, f && is_directory(f), f && f->filetype == symbolic_link); */
 //    print_icon(buf, len, stdout, f && is_directory(f), f && f->linkname);
 
