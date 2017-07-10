@@ -6,7 +6,6 @@ This is a fork of [coreutils](https://github.com/coreutils/coreutils) with a mod
 
 ## Dependencies
 
-- gcc  
 - [icons-in-terminal](https://github.com/sebastiencs/icons-in-terminal)  
 
 ## Installation
@@ -26,4 +25,4 @@ You can check if your terminal support true colours [here](https://gist.github.c
 ## Customization
 
 - You can change colors in `src/ls-icons.c`.
-- To add new icons with file extensions, modify the structure `file_matches` in `src/ls-icons.c`. Pull requests are welcome
+- To add new icons with file extensions, modify the array `file_matches` in `src/ls-icons.c`. Pull requests are welcome
