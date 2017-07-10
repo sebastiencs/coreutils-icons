@@ -4,44 +4,109 @@
 #include "icons-in-terminal.h"
 
 #define COLOR_AND_SIZE(x) x, sizeof x - 1
-#define COLOR(r,g,b) COLOR_AND_SIZE("\x1b[38;2;"#r";"#g";"#b"m")
-#define ENDCOLOR ("\x1b[0m")
 
-#define LIGHT_PINK COLOR(244, 143, 177)
-#define LIGHT_BLUE COLOR(144, 202, 249)
-#define LIGHT_SILVER COLOR(189, 189, 189)
-#define LIGHT_GREEN COLOR(105, 240, 174)
-#define LIGHT_CYAN COLOR(24, 255, 255)
-#define LIGHT_RED COLOR(255, 93, 72)
-#define LIGHT_ORANGE COLOR(255, 171, 64)
-#define LIGHT_MAROON COLOR(161, 136, 127)
-#define LIGHT_YELLOW COLOR(255, 255, 141)
-#define LIGHT_PURPLE COLOR(206, 147, 216)
-#define DARK_PINK COLOR(173, 20, 87)
-#define DARK_BLUE COLOR(21, 101, 192)
-#define DARK_SILVER COLOR(117, 117, 117)
-#define DARK_GREEN COLOR(0, 200, 83)
-#define DARK_CYAN COLOR(0, 184, 212)
-#define DARK_RED COLOR(209, 48, 27)
-#define DARK_ORANGE COLOR(255, 109, 0)
-#define DARK_MAROON COLOR(78, 52, 46)
-#define DARK_YELLOW COLOR(255, 234, 0)
-#define DARK_PURPLE COLOR(106, 27, 154)
-#define PINK COLOR(233, 30, 99)
-#define BLUE COLOR(33, 150, 243)
-#define SILVER COLOR(158, 158, 158)
-#define GREEN COLOR(0, 230, 118)
-#define CYAN COLOR(0, 229, 255)
-#define RED COLOR(255, 58, 32)
-#define ORANGE COLOR(255, 145, 0)
-#define MAROON COLOR(121, 85, 72)
-#define YELLOW COLOR(255, 255, 0)
-#define PURPLE COLOR(156, 39, 176)
+#ifdef NO_TRUE_COLOURS
+
+//
+// Use 256 colours
+//
+// You can use this script to get the corresponding numbers:
+// https://github.com/eikenb/terminal-colors
+//
+// $./terminal-colors -n
+//
+
+# error "error gros"
+
+# define COLOR(n) COLOR_AND_SIZE("\x1b[38;5;"#n"m")
+# define ENDCOLOR ("\e[0m")
+
+# define LIGHT_PINK COLOR(219)
+# define LIGHT_BLUE COLOR(39)
+# define LIGHT_SILVER COLOR(253)
+# define LIGHT_GREEN COLOR(154)
+# define LIGHT_CYAN COLOR(123)
+# define LIGHT_RED COLOR(203)
+# define LIGHT_ORANGE COLOR(209)
+# define LIGHT_MAROON COLOR(137)
+# define LIGHT_YELLOW COLOR(228)
+# define LIGHT_PURPLE COLOR(177)
+# define DARK_PINK COLOR(200)
+# define DARK_BLUE COLOR(20)
+# define DARK_SILVER COLOR(240)
+# define DARK_GREEN COLOR(76)
+# define DARK_CYAN COLOR(44)
+# define DARK_RED COLOR(124)
+# define DARK_ORANGE COLOR(166)
+# define DARK_MAROON COLOR(94)
+# define DARK_YELLOW COLOR(220)
+# define DARK_PURPLE COLOR(164)
+# define PINK COLOR(201)
+# define BLUE COLOR(21)
+# define SILVER COLOR(245)
+# define GREEN COLOR(82)
+# define CYAN COLOR(45)
+# define RED COLOR(196)
+# define ORANGE COLOR(208)
+# define MAROON COLOR(130)
+# define YELLOW COLOR(226)
+# define PURPLE COLOR(165)
+
+#else // !NO_TRUE_COLOURS
+
+//
+// Use 256*256*256 colours (16 millions colours)
+//
+// Example from hexadecimal numbers:
+//
+// Red: #FF3A20
+// 0xFF = 255
+// 0x3A = 58
+// 0x20 = 32
+//
+// red: COLOR(255, 58, 32)
+//
+
+# define COLOR(r,g,b) COLOR_AND_SIZE("\x1b[38;2;"#r";"#g";"#b"m")
+# define ENDCOLOR ("\x1b[0m")
+
+# define LIGHT_PINK COLOR(244, 143, 177)
+# define LIGHT_BLUE COLOR(144, 202, 249)
+# define LIGHT_SILVER COLOR(189, 189, 189)
+# define LIGHT_GREEN COLOR(105, 240, 174)
+# define LIGHT_CYAN COLOR(24, 255, 255)
+# define LIGHT_RED COLOR(255, 93, 72)
+# define LIGHT_ORANGE COLOR(255, 171, 64)
+# define LIGHT_MAROON COLOR(161, 136, 127)
+# define LIGHT_YELLOW COLOR(255, 255, 141)
+# define LIGHT_PURPLE COLOR(206, 147, 216)
+# define DARK_PINK COLOR(173, 20, 87)
+# define DARK_BLUE COLOR(21, 101, 192)
+# define DARK_SILVER COLOR(117, 117, 117)
+# define DARK_GREEN COLOR(0, 200, 83)
+# define DARK_CYAN COLOR(0, 184, 212)
+# define DARK_RED COLOR(209, 48, 27)
+# define DARK_ORANGE COLOR(255, 109, 0)
+# define DARK_MAROON COLOR(78, 52, 46)
+# define DARK_YELLOW COLOR(255, 234, 0)
+# define DARK_PURPLE COLOR(106, 27, 154)
+# define PINK COLOR(233, 30, 99)
+# define BLUE COLOR(33, 150, 243)
+# define SILVER COLOR(158, 158, 158)
+# define GREEN COLOR(0, 230, 118)
+# define CYAN COLOR(0, 229, 255)
+# define RED COLOR(255, 58, 32)
+# define ORANGE COLOR(255, 145, 0)
+# define MAROON COLOR(121, 85, 72)
+# define YELLOW COLOR(255, 255, 0)
+# define PURPLE COLOR(156, 39, 176)
+
+#endif // NO_TRUE_COLOURS
 
 typedef enum type_match {
   SUFFIX = 0b1,
-  FULL = 0x10,
-  PREFIX = 0x100
+  FULL = 0b10,
+  PREFIX = 0b100
 } e_type_match;
 
 typedef struct {
@@ -95,7 +160,7 @@ typedef struct {
 
 static t_file_matching file_matches[] = {
 
-  // Insert data here, not at the end of the struct
+  // Insert new data here, not at the end of the structure
 
   { FILE_VIDEO, MATCH( S(".mpeg", ".mpg") ), RED},
   { FILE_VIDEO, MATCH( S(".webm") ), DARK_BLUE},
@@ -316,14 +381,8 @@ static t_file_matching file_matches[] = {
   { FA_FILE_TEXT_O, MATCH( S(".txt", ".text") ), BLUE},
   { OCT_DATABASE, MATCH( S(".cache") ), GREEN},
   { FA_FOLDER, MATCH( F(".", "..") ), DARK_BLUE},
-  { OCT_GEAR, MATCH( P(".") ), 0},
-  /* { OCT_GEAR, (t_match[]) { PRE("."), END }, 0}, */
-
-//  { OCT_GEAR, (t_match[]) { (t_match) { ".", 2, PREFIX }, (t_match) { "a*", 2 }, (t_match) {"",0} }  , 0},
-
-//  { OCT_GEAR, &(t_match*) { &(t_match) { ".*", 1 }, &(t_match) { ".*", 1 } }  , 0},
-
-//  { OCT_GEAR, { &(t_match) { ".*", 1 }, &(t_match) { }    } , 0},
+  { OCT_GEAR, MATCH( P(".") ), 0}
+  // Insert new data at the beginning of the struture, not here !
 };
 
 static const size_t size_file_matches = sizeof file_matches / sizeof file_matches[0];

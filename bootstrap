@@ -1,6 +1,6 @@
 #! /bin/sh
 # Print a version string.
-scriptversion=2017-05-12.13; # UTC
+scriptversion=2017-07-10.05; # UTC
 
 # Bootstrap this package from checked-out sources.
 
@@ -36,10 +36,10 @@ DATA="${DATA}/icons-in-terminal/"
 ICONS_HEADER="${DATA}/icons-in-terminal.h"
 
 if [ -f "$ICONS_HEADER" ]; then
-    ln -s $ICONS_HEADER ./src/
+    ln -fs $ICONS_HEADER ./src/
 else
     echo "Cannot find icons-in-terminal, are you sure it's installed ?"
-    echo "If you installed it and this message is an error, please open an issue:"
+    echo "If you installed it this message is an error, please open an issue:"
     echo "https://github.com/sebastiencs/icons-in-terminal"
     exit 1
 fi
