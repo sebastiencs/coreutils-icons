@@ -16,8 +16,6 @@
 // $./terminal-colors -n
 //
 
-# error "error gros"
-
 # define COLOR(n) COLOR_AND_SIZE("\x1b[38;5;"#n"m")
 # define ENDCOLOR ("\e[0m")
 
@@ -32,7 +30,7 @@
 # define LIGHT_YELLOW COLOR(228)
 # define LIGHT_PURPLE COLOR(177)
 # define DARK_PINK COLOR(200)
-# define DARK_BLUE COLOR(20)
+# define DARK_BLUE COLOR(27)
 # define DARK_SILVER COLOR(240)
 # define DARK_GREEN COLOR(76)
 # define DARK_CYAN COLOR(44)
@@ -40,9 +38,9 @@
 # define DARK_ORANGE COLOR(166)
 # define DARK_MAROON COLOR(94)
 # define DARK_YELLOW COLOR(220)
-# define DARK_PURPLE COLOR(164)
+# define DARK_PURPLE COLOR(93)
 # define PINK COLOR(201)
-# define BLUE COLOR(21)
+# define BLUE COLOR(33)
 # define SILVER COLOR(245)
 # define GREEN COLOR(82)
 # define CYAN COLOR(45)
