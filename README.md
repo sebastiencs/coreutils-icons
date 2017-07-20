@@ -14,7 +14,7 @@ You need to install [icons-in-terminal](https://github.com/sebastiencs/icons-in-
 - Once installed, you can run:
 ```bash
 $ ./bootstrap
-$ export CFLAGS=-DNO_TRUE_COLOURS=1 # Only if your terminal doesn't support true colours
+$ export CFLAGS=-DNO_TRUE_COLOURS=1 # Execute this line _only_ if your terminal doesn't support true colours
 $ ./configure --prefix=/opt/coreutils
 $ make
 $ make install
