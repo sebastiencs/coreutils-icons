@@ -6,6 +6,7 @@ This is a fork of [coreutils](https://github.com/coreutils/coreutils) with a mod
 
 ## Dependencies
 
+- clang
 - [icons-in-terminal](https://github.com/sebastiencs/icons-in-terminal)  
 
 ## Installation
@@ -15,6 +16,7 @@ You need to install [icons-in-terminal](https://github.com/sebastiencs/icons-in-
 ```bash
 $ ./bootstrap
 $ export CFLAGS=-DNO_TRUE_COLOURS=1 # Execute this line _only_ if your terminal doesn't support true colours
+$ export CC=clang CXX=clang++
 $ ./configure --prefix=/opt/coreutils
 $ make
 $ make install
