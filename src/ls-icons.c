@@ -326,6 +326,7 @@ static t_file_matching file_matches[] = {
   { MD_MUSIC_NOTE, MATCH( S(".m4a") ), CYAN},
   { MD_MUSIC_NOTE, MATCH( S(".flac") ), DARK_RED},
   { MD_MUSIC_NOTE, MATCH( S(".wav") ), YELLOW},
+  { MD_MUSIC_NOTE, MATCH( S(".ogg") ), DARK_ORANGE},
   { MD_MUSIC_NOTE, MATCH( S(".acc", ".ac3", ".m4p") ), DARK_CYAN},
   { FA_FILE_PDF_O, MATCH( S(".pdf") ), RED},
   { MFIZZ_REDHAT, MATCH( S(".rpm") ), RED},
