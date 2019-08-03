@@ -34,9 +34,12 @@ fi
 
 DATA="${DATA}/icons-in-terminal/"
 ICONS_HEADER="${DATA}/icons-in-terminal.h"
+ICONS_HEADER_ARCH="/etc/icons-in-terminal/icons-in-terminal.h"
 
 if [ -f "$ICONS_HEADER" ]; then
     ln -fs $ICONS_HEADER ./src/
+elif [ -f "$ICONS_HEADER_ARCH" ]; then
+    ln -fs $ICONS_HEADER_ARCH ./src/
 else
     echo "Cannot find icons-in-terminal, are you sure it's installed ?"
     echo "If you installed it this message is an error, please open an issue:"
