@@ -288,6 +288,7 @@ static t_file_matching file_matches[] = {
   { FA_FILE_IMAGE_O, MATCH( S(".webp") ), DARK_BLUE},
   { FA_FILE_IMAGE_O, MATCH( S(".ico") ), BLUE},
   { FA_FILE_IMAGE_O, MATCH( S(".jpg") ), GREEN},
+  { FA_FILE_IMAGE_O, MATCH( S(".jpeg") ), GREEN},
   { FA_FILE_IMAGE_O, MATCH( S(".gif") ), YELLOW},
   { FA_FILE_IMAGE_O, MATCH( S(".png") ), ORANGE},
   { FILE_OPENOFFICE, MATCH( S(".odt") ), BLUE},
