@@ -276,6 +276,7 @@ static t_file_matching file_matches[] = {
   { MD_VPN_KEY, MATCH( P("id_rsa") ), RED},
   { MD_VPN_KEY, MATCH( S(".crt") ), BLUE},
   { MD_VPN_KEY, MATCH( S(".pem") ), ORANGE},
+  { MD_VPN_KEY, MATCH( S(".ovpn") ), DARK_ORANGE},
   { MD_VPN_KEY, MATCH( S(".pub") ), YELLOW},
   { MD_VPN_KEY, MATCH( S(".key") ), BLUE},
   { DEV_BOWER, MATCH( S(".bowerrc", "bower.json", "Bowerfile") ), YELLOW},
