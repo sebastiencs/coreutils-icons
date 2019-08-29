@@ -34,7 +34,7 @@ fi
 
 DATA="${DATA}/icons-in-terminal/"
 ICONS_HEADER="${DATA}/icons-in-terminal.h"
-ICONS_HEADER_ARCH="/etc/icons-in-terminal/icons-in-terminal.h"
+ICONS_HEADER_ARCH="/usr/share/icons-in-terminal/icons-in-terminal.h"
 
 if [ -f "$ICONS_HEADER" ]; then
     ln -fs $ICONS_HEADER ./src/
