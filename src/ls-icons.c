@@ -377,6 +377,7 @@ static t_file_matching file_matches[] = {
   { MFIZZ_CPLUSPLUS, MATCH( S(".hh", ".hpp", ".hxx") ), PURPLE},
   { MFIZZ_C, MATCH( S(".c") ), BLUE},
   { MFIZZ_C, MATCH( S(".h") ), PURPLE},
+  { FILE_BIBTEX, MATCH( S(".bib") ), ORANGE},
   { FILE_TEX, MATCH( S(".tex") ), BLUE},
   { FILE_POWERPOINT, MATCH( S(".ppt", ".pps", ".ppsx", ".pptx") ), LIGHT_PINK},
   { OCT_BOOKMARK, MATCH( F("bookmark") ), LIGHT_PINK},
