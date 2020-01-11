@@ -160,6 +160,9 @@ static t_file_matching file_matches[] = {
 
   // Insert new data here, not at the end of the structure
 
+  { MD_LOCK, MATCH( S(".lock") ), MAROON},
+  { MFIZZ_RUST, MATCH( F("Cargo.toml") ), LIGHT_MAROON},
+  { MFIZZ_RUST, MATCH( S(".rs") ), MAROON},
   { FILE_VIDEO, MATCH( S(".mpeg", ".mpg") ), RED},
   { FILE_VIDEO, MATCH( S(".webm") ), DARK_BLUE},
   { FILE_VIDEO, MATCH( S(".flv") ), RED},
